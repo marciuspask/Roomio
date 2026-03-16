@@ -1,10 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserButton } from "@clerk/react";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 const Nav = () => {
-  const { isLoggedIn } = useAuth();
+  const { isSignedIn } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -25,11 +25,12 @@ const Nav = () => {
           </Link>
         </div>
         <div className="hidden items-center gap-3 md:flex">
-          {isLoggedIn ? (
+          {isSignedIn ? (
             <>
               <Link to="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 Dashboard
               </Link>
+              <UserButton />
               <button
                 onClick={() => navigate("/listings/create")}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark transition-colors"
@@ -66,7 +67,7 @@ const Nav = () => {
         <div className="border-t border-border bg-background px-4 pb-4 pt-2 md:hidden">
           <div className="flex flex-col gap-3">
             <Link to="/listings" onClick={() => setMobileOpen(false)} className="text-sm font-medium text-muted-foreground">Browse rooms</Link>
-            {isLoggedIn ? (
+            {isSignedIn ? (
               <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="text-sm font-medium text-muted-foreground">Dashboard</Link>
             ) : (
               <Link to="/login" onClick={() => setMobileOpen(false)} className="text-sm font-medium text-muted-foreground">Log in</Link>
