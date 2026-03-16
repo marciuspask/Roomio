@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 24 100% 98.6%;
+    --foreground: 12 20% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 12 20% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 12 20% 8%;
+
+    --primary: 16 78% 54%;
+    --primary-foreground: 0 0% 100%;
+    --primary-dark: 16 76% 45%;
+    --primary-light: 20 100% 96.5%;
+
+    --secondary: 20 100% 96.5%;
+    --secondary-foreground: 12 20% 8%;
+
+    --muted: 24 30% 94%;
+    --muted-foreground: 16 25% 53%;
+
+    --accent: 20 100% 96.5%;
+    --accent-foreground: 12 20% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 28 28% 91%;
+    --input: 28 28% 91%;
+    --ring: 16 78% 54%;
+
+    --radius: 0.75rem;
+
+    --success: 100 72% 25%;
+    --success-bg: 90 42% 91%;
+    --warning: 36 82% 28%;
+    --warning-bg: 40 86% 92%;
+
+    --surface: 0 0% 100%;
+    --surface-elevated: 20 100% 96.5%;
+    --text-primary: 12 20% 8%;
+    --text-secondary: 16 25% 53%;
+    --text-muted: 18 26% 69%;
+
+    --coral-glow: 16 78% 83%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
