@@ -6,7 +6,7 @@ const Footer = () => (
           <h3 className="font-heading text-lg font-bold text-foreground">
             Roomi<span className="text-primary">o</span>
           </h3>
-          <p className="mt-2 text-sm text-muted-foreground">Find your flatmate in Vilnius.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Find your flatmate in Lithuania.</p>
         </div>
         <div>
           <h4 className="mb-3 text-sm font-semibold text-foreground">Product</h4>

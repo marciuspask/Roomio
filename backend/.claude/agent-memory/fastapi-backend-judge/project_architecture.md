@@ -1,0 +1,48 @@
+---
+name: project_architecture
+description: Core architectural patterns, base classes, and module layout for the Roomio backend
+type: project
+---
+
+# Roomio Backend Architecture
+
+**Why:** Recorded to give future review sessions immediate context on established conventions.
+**How to apply:** Use these facts to correctly interpret rule checks without re-reading every file.
+
+## Key base classes
+- `BaseAppError` is defined in `src/errors/base.py`. All module error classes must inherit from it.
+- `ErrorData` (dataclass) is the required constructor argument for every `BaseAppError` subclass — it carries `detail`, `error_code`, `status_code`, and `context`.
+- `TenantRepository` is defined in `src/common/database/repository.py`. Tenant-scoped repositories inherit from it.
+- `UnitOfWork` is defined in `src/common/database/unit_of_work.py`. It owns the `session.commit()` call on success — repositories must only call `flush()`.
+- `di.py` exports `TenantDep` and `AdminDep` as the canonical DI type aliases.
+
+## Response envelope pattern
+- All API responses use a `Response(data=...)` model, e.g. `SettingsResponse(data=result)`.
+- `HealthResponse` and `MeResponse` / `AdminTestResponse` are flat models returned directly (not enveloped). These are intentionally exceptions to Rule 3 for simple informational endpoints.
+
+## Module layout
+- `src/settings/` — full stack: models, router, service, repositories, errors, ORM models, UoW.
+- `src/profile/` — stub: in-memory store, no DB layer yet. `ProfileError` lives inside `router.py` (not a dedicated `errors.py`). This is an architectural debt item.
+- `src/routes/` — thin utility routes: health, me (no service layer needed).
+- `src/auth/` — Clerk JWT authentication. `AuthError` lives in `dependencies.py` (not a dedicated `errors.py`).
+- `src/listings/` — full stack: models, router, service, repositories, errors, ORM models, UoW. Reviewed 2026-03-23 — CLEAN, zero violations across all 14 rules.
+
+## listings module notes (reviewed 2026-03-23)
+- `ListingType`, `GenderPref`, `ListingStatus` are all proper `StrEnum` subclasses (Rule 4 satisfied).
+- `ListingResponse(data=...)` and `ListingsResponse(data=...)` are the envelope models used on all endpoints (Rule 3 satisfied).
+- `ListingsRepository` inherits `TenantRepository`; public methods (`get_all_active`, `get_public_by_id`) intentionally bypass tenant filter for public-access endpoints — this is by design, not a Rule 11 violation.
+- `di.py` exports `ListingsServiceDep` and `PublicListingsServiceDep` — both used correctly in the router (Rule 14 satisfied).
+- `ListingError` in `errors.py` inherits `BaseAppError`, has two `@classmethod` factories both with `error_code` and explicit `context` (Rules 5, 6, 7 satisfied).
+- DELETE endpoint uses `response_model=None` with HTTP 204 — this is the correct FastAPI pattern and is not a Rule 13 violation.
+
+## Known architectural debt
+- `src/profile/router.py` contains business logic (in-memory CRUD, fallback default creation) directly in router functions — violates Rule 12.
+- `src/profile/router.py` defines `ProfileError` inside the router module — should move to a dedicated `errors.py`.
+- `src/auth/dependencies.py:118` has an inline `Depends(get_tenant_context_from_header)` inside `require_admin` that is not aliased through `di.py` — WARNING (internal wiring, not a public router annotation).
+- `src/routes/health.py` and `src/routes/me.py` return flat Pydantic models without a `Response(data=...)` envelope — teams have implicitly waived Rule 3 for these utility endpoints.
+
+## Confirmed clean (previously flagged, now resolved)
+- `src/settings/router.py` correctly imports `SettingsServiceDep` from `di.py`. `di.py` also defines `get_settings_service` and the `SettingsServiceDep` alias. Rule 14 is satisfied for the settings router as of the last review (2026-03-22).
+
+## AuthError factory gap (Rule 7)
+- `src/auth/dependencies.py`: `AuthError.missing_token()` and `AuthError.invalid_token()` do NOT pass a `context` argument to `ErrorData` — `ErrorData.context` defaults to `{}` via `field(default_factory=dict)`, so no explicit `context` key appears in the factory. Recorded as a Rule 7 WARNING (the default exists but is not explicit).
