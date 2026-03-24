@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@clerk/react";
 import Nav from "@/components/Nav";
 import StepProgress from "@/components/StepProgress";
 import ListingCard from "@/features/listings/ListingCard";
 import { lithuanianCities } from "@/lib/mockData";
-import { useCreateListing } from "@/api/hooks";
+import { useCreateListing, useUpdateListing, useListing } from "@/api/hooks";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { ListingType, GenderPref, ListingStatus } from "@/api/generated/data-contracts";
 import type { Listing } from "@/api/generated/data-contracts";
@@ -15,7 +16,16 @@ const CreateListing = () => {
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { mutateAsync, isPending } = useCreateListing();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = !!id;
+
+  // Fetch existing listing in edit mode (disabled when creating)
+  const { data: existingData, isLoading: loadingExisting } = useListing(id ?? "");
+  const existing = existingData?.data;
+
+  const { mutateAsync: createListing, isPending: creating } = useCreateListing();
+  const { mutateAsync: updateListing, isPending: updating } = useUpdateListing(id ?? "");
+  const isPending = creating || updating;
 
   const [step, setStep] = useState(0);
   const steps = ["Type & basics", "Details", "Photos", "Preview & publish"];
@@ -38,19 +48,65 @@ const CreateListing = () => {
   // Step 3 (photos — no API backing yet)
   const [photos, setPhotos] = useState<string[]>([]);
 
+  // Pre-fill form fields when existing listing data arrives (runs only once)
+  const hasInitialized = useRef(false);
+  useEffect(() => {
+    if (existing && !hasInitialized.current) {
+      hasInitialized.current = true;
+      setListingType(existing.listing_type);
+      setTitle(existing.title);
+      setCity(existing.city);
+      setDistrict(existing.district ?? "");
+      setPrice(String(existing.price));
+      setUtilitiesIncl(existing.utilities_incl);
+      setDescription(existing.description);
+      setAvailableFrom(existing.available_from.slice(0, 10));
+      setGenderPref(existing.gender_pref);
+      setSmoking(existing.allows_smoking);
+      setPets(existing.allows_pets);
+    }
+  }, [existing]);
+
   if (!isSignedIn) {
     navigate("/login");
     return null;
   }
 
+  // Show loading state while fetching existing listing in edit mode
+  if (isEditMode && loadingExisting) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Nav />
+        <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-4">
+          <Skeleton className="h-8 w-48 rounded-lg" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-32 w-full rounded-lg" />
+        </div>
+      </div>
+    );
+  }
+
+  // If edit mode but listing not found (after load)
+  if (isEditMode && !loadingExisting && !existing) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Nav />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <p className="text-sm text-muted-foreground">Listing not found.</p>
+        </div>
+      </div>
+    );
+  }
+
   const addMockPhoto = () => {
     if (photos.length >= 6) return;
-    const id = Math.floor(Math.random() * 100) + 200;
-    setPhotos([...photos, `https://picsum.photos/seed/${id}/800/500`]);
+    const photoId = Math.floor(Math.random() * 100) + 200;
+    setPhotos([...photos, `https://picsum.photos/seed/${photoId}/800/500`]);
   };
 
   const previewListing: Listing = {
-    id: "preview",
+    id: id ?? "preview",
     tenant_id: "",
     listing_type: listingType ?? ListingType.Offering,
     title: title || "Your listing title",
@@ -71,24 +127,46 @@ const CreateListing = () => {
 
   const handlePublish = async () => {
     try {
-      await mutateAsync({
-        listing_type: listingType!,
-        title,
-        description,
-        city,
-        district: district || null,
-        price: parseInt(price),
-        utilities_incl: utilitiesIncl,
-        available_from: availableFrom,
-        allows_smoking: smoking,
-        allows_pets: pets,
-        gender_pref: genderPref,
-        status: ListingStatus.Active,
-      });
-      toast({ title: "Your listing is live!" });
-      navigate("/listings");
+      if (isEditMode) {
+        await updateListing({
+          listing_type: listingType!,
+          title,
+          description,
+          city,
+          district: district || null,
+          price: parseInt(price),
+          utilities_incl: utilitiesIncl,
+          available_from: availableFrom,
+          allows_smoking: smoking,
+          allows_pets: pets,
+          gender_pref: genderPref,
+        });
+        toast({ title: "Listing updated!" });
+        navigate(`/listings/${id}`);
+      } else {
+        await createListing({
+          listing_type: listingType!,
+          title,
+          description,
+          city,
+          district: district || null,
+          price: parseInt(price),
+          utilities_incl: utilitiesIncl,
+          available_from: availableFrom,
+          allows_smoking: smoking,
+          allows_pets: pets,
+          gender_pref: genderPref,
+          status: ListingStatus.Active,
+        });
+        toast({ title: "Your listing is live!" });
+        navigate("/listings");
+      }
     } catch {
-      toast({ title: "Failed to publish", description: "Please try again.", variant: "destructive" });
+      toast({
+        title: isEditMode ? "Failed to update" : "Failed to publish",
+        description: "Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -223,14 +301,20 @@ const CreateListing = () => {
         {/* Step 4 */}
         {step === 3 && (
           <div className="space-y-5">
-            <h2 className="font-heading text-xl font-bold text-foreground">Your listing preview</h2>
+            <h2 className="font-heading text-xl font-bold text-foreground">
+              {isEditMode ? "Review your changes" : "Your listing preview"}
+            </h2>
             <div className="mx-auto max-w-sm">
               <ListingCard listing={previewListing} />
             </div>
-            <p className="text-center text-sm text-muted-foreground">This is how your listing will appear to others.</p>
+            <p className="text-center text-sm text-muted-foreground">
+              {isEditMode ? "Review your edits before saving." : "This is how your listing will appear to others."}
+            </p>
             <button onClick={handlePublish} disabled={isPending}
               className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50">
-              {isPending ? "Publishing..." : "Publish listing"}
+              {isPending
+                ? (isEditMode ? "Saving..." : "Publishing...")
+                : (isEditMode ? "Save changes" : "Publish listing")}
             </button>
             <button onClick={() => setStep(2)}
               className="w-full rounded-lg border border-border py-2.5 text-sm font-medium text-foreground">

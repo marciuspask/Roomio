@@ -6,5 +6,6 @@ export function useListing(id: string) {
     queryKey: ["listing", id],
     queryFn: () =>
       apiClient.getListingApiV1ListingsListingIdGet(id).then((res) => res.data),
+    enabled: !!id,
   });
 }

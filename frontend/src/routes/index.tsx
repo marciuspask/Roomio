@@ -24,6 +24,7 @@ const AppRoutes = () => (
     <Route path="/" element={<Landing />} />
     <Route path="/listings" element={<BrowseListings />} />
     <Route path="/listings/create" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
+    <Route path="/listings/:id/edit" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
     <Route path="/listings/:id" element={<ListingDetail />} />
     <Route path="/login/*" element={<div style={{ minHeight: "100vh", background: "#FFFAF7", display: "flex", alignItems: "center", justifyContent: "center" }}><SignIn routing="path" path="/login" fallbackRedirectUrl="/dashboard" appearance={clerkAppearance} /></div>} />
     <Route path="/register/*" element={<div style={{ minHeight: "100vh", background: "#FFFAF7", display: "flex", alignItems: "center", justifyContent: "center" }}><SignUp routing="path" path="/register" fallbackRedirectUrl="/dashboard" appearance={clerkAppearance} /></div>} />
