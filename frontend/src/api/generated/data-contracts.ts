@@ -28,6 +28,13 @@ export enum TenantType {
   User = "user",
 }
 
+/** Occupation */
+export enum Occupation {
+  Student = "student",
+  Working = "working",
+  Other = "other",
+}
+
 /** ListingType */
 export enum ListingType {
   Offering = "offering",
@@ -380,9 +387,14 @@ export interface MeResponse {
 export interface Profile {
   /**
    * Id
-   * Unique identifier for the user
+   * Unique profile identifier (UUID)
    */
   id: string;
+  /**
+   * Tenant Id
+   * Owner's tenant identifier for data isolation
+   */
+  tenant_id: string;
   /**
    * Display Name
    * Publicly visible name shown on listings and messages
@@ -391,13 +403,40 @@ export interface Profile {
   /**
    * Bio
    * Short description the user writes about themselves
+   * @default ""
    */
-  bio: string;
+  bio?: string;
+  /** User's employment status */
+  occupation?: Occupation | null;
   /**
    * Email
    * User's email address
    */
-  email: string;
+  email?: string | null;
+  /**
+   * Is Email Verified
+   * Email has been verified
+   * @default false
+   */
+  is_email_verified?: boolean;
+  /**
+   * Is Phone Verified
+   * Phone number has been verified
+   * @default false
+   */
+  is_phone_verified?: boolean;
+  /**
+   * Created At
+   * Timestamp when the profile was created
+   * @format date-time
+   */
+  created_at: string;
+  /**
+   * Updated At
+   * Timestamp when the profile was last updated
+   * @format date-time
+   */
+  updated_at: string;
 }
 
 /** ProfileResponse */
@@ -411,17 +450,30 @@ export interface ProfileUpdate {
   /**
    * Display Name
    * Publicly visible name shown on listings and messages
-   * @minLength 1
-   * @maxLength 100
    */
-  display_name: string;
+  display_name?: string | null;
   /**
    * Bio
    * Short description the user writes about themselves
-   * @maxLength 500
-   * @default ""
    */
-  bio?: string;
+  bio?: string | null;
+  /** User's employment status */
+  occupation?: Occupation | null;
+  /**
+   * Email
+   * User's email address
+   */
+  email?: string | null;
+  /**
+   * Is Email Verified
+   * Whether the user's email has been verified
+   */
+  is_email_verified?: boolean | null;
+  /**
+   * Is Phone Verified
+   * Whether the user's phone number has been verified
+   */
+  is_phone_verified?: boolean | null;
 }
 
 /** Settings */

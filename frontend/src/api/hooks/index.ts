@@ -6,3 +6,4 @@ export { useCreateListing } from "./useCreateListing";
 export { useListing } from "./useListing";
 export { useDeleteListing } from "./useDeleteListing";
 export { useUpdateListing } from "./useUpdateListing";
+export { usePublicProfile } from "./usePublicProfile";

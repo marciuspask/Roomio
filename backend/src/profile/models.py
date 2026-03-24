@@ -1,24 +1,50 @@
-from pydantic import BaseModel, Field
+from datetime import datetime
+from enum import StrEnum
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class Occupation(StrEnum):
+    STUDENT = "student"
+    WORKING = "working"
+    OTHER = "other"
+
+
+class Profile(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str = Field(description="Unique profile identifier (UUID)")
+    tenant_id: str = Field(description="Owner's tenant identifier for data isolation")
+    display_name: str = Field(description="Publicly visible name shown on listings and messages")
+    bio: str = Field(default="", description="Short description the user writes about themselves")
+    occupation: Occupation | None = Field(default=None, description="User's employment status")
+    email: str | None = Field(default=None, description="User's email address")
+    is_email_verified: bool = Field(default=False, description="Email has been verified")
+    is_phone_verified: bool = Field(default=False, description="Phone number has been verified")
+    created_at: datetime = Field(description="Timestamp when the profile was created")
+    updated_at: datetime = Field(description="Timestamp when the profile was last updated")
 
 
 class ProfileUpdate(BaseModel):
-    display_name: str = Field(
+    display_name: str | None = Field(
+        default=None,
         min_length=1,
         max_length=100,
         description="Publicly visible name shown on listings and messages",
     )
-    bio: str = Field(
-        default="",
+    bio: str | None = Field(
+        default=None,
         max_length=500,
         description="Short description the user writes about themselves",
     )
-
-
-class Profile(BaseModel):
-    id: str = Field(description="Unique identifier for the user")
-    display_name: str = Field(description="Publicly visible name shown on listings and messages")
-    bio: str = Field(description="Short description the user writes about themselves")
-    email: str = Field(description="User's email address")
+    occupation: Occupation | None = Field(default=None, description="User's employment status")
+    email: str | None = Field(default=None, description="User's email address")
+    is_email_verified: bool | None = Field(
+        default=None, description="Whether the user's email has been verified"
+    )
+    is_phone_verified: bool | None = Field(
+        default=None, description="Whether the user's phone number has been verified"
+    )
 
 
 class ProfileResponse(BaseModel):

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/react";
-import { mockConversations, mockCurrentUser } from "@/lib/mockData";
-import { useMyListings, useDeleteListing } from "@/api/hooks";
+import { mockConversations } from "@/lib/mockData";
+import { useMyListings, useDeleteListing, useProfile, useUpdateProfile } from "@/api/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Occupation } from "@/api/generated/data-contracts";
 import { useToast } from "@/hooks/use-toast";
 import { Home, LayoutList, MessageSquare, User, Plus, Zap, ArrowLeft, Trash2 } from "lucide-react";
 
@@ -20,18 +21,29 @@ const Dashboard = () => {
   const myListings = myListingsData?.data ?? [];
   const { mutate: deleteListing, isPending: deleting } = useDeleteListing();
 
+  const { data: profileData, isLoading: profileLoading } = useProfile();
+  const profile = profileData?.data;
+  const { mutate: saveProfile, isPending: savingProfile } = useUpdateProfile();
+
+  const [profileName, setProfileName] = useState("");
+  const [profileBio, setProfileBio] = useState("");
+  const [profileOccupation, setProfileOccupation] = useState<Occupation | null>(null);
+
+  // Pre-fill form when profile data arrives
+  useEffect(() => {
+    if (profile) {
+      setProfileName(profile.display_name);
+      setProfileBio(profile.bio ?? "");
+      setProfileOccupation(profile.occupation ?? null);
+    }
+  }, [profile]);
+
   const totalUnread = mockConversations.reduce((s, c) => s + c.unread, 0);
 
   // Messages state
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
   const [newMsg, setNewMsg] = useState("");
   const [extraMessages, setExtraMessages] = useState<Record<string, { senderId: string; text: string; time: string }[]>>({});
-
-  // Profile state
-  const [profileName, setProfileName] = useState(user?.fullName ?? mockCurrentUser.name);
-  const [profileBio, setProfileBio] = useState(mockCurrentUser.bio);
-  const [profileOccupation, setProfileOccupation] = useState<"student" | "working" | "other">(mockCurrentUser.occupation);
-  const [savingProfile, setSavingProfile] = useState(false);
 
   // Boost modal
   const [boostModal, setBoostModal] = useState<string | null>(null);
@@ -65,11 +77,13 @@ const Dashboard = () => {
   };
 
   const handleSaveProfile = () => {
-    setSavingProfile(true);
-    setTimeout(() => {
-      setSavingProfile(false);
-      toast({ title: "Profile updated ✓" });
-    }, 1000);
+    saveProfile(
+      { display_name: profileName, bio: profileBio, occupation: profileOccupation },
+      {
+        onSuccess: () => toast({ title: "Profile updated ✓" }),
+        onError: () => toast({ title: "Failed to save profile", variant: "destructive" }),
+      },
+    );
   };
 
   const selectedConversation = mockConversations.find(c => c.id === selectedConvo);
@@ -125,9 +139,9 @@ const Dashboard = () => {
           {/* OVERVIEW */}
           {activeTab === "overview" && (
             <>
-              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">Good morning, {user?.firstName ?? mockCurrentUser.name.split(" ")[0]} 👋</h1>
+              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">Good morning, {user?.firstName ?? "there"} 👋</h1>
 
-              {!mockCurrentUser.isPhoneVerified && (
+              {profile?.is_phone_verified === false && (
                 <div className="mb-6 rounded-xl border border-warning/30 bg-warning-bg p-4">
                   <h3 className="mb-1 text-sm font-semibold text-warning">Your profile is incomplete</h3>
                   <div className="mb-2 h-2 w-full rounded-full bg-warning/20">
@@ -352,47 +366,62 @@ const Dashboard = () => {
           {activeTab === "profile" && (
             <>
               <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">My Profile</h1>
-              <div className="max-w-lg space-y-4">
-                <div className="flex items-center gap-4">
-                  <img src={user?.imageUrl ?? mockCurrentUser.avatar} alt="" className="h-16 w-16 rounded-full object-cover" />
-                  <button className="text-sm font-medium text-primary">Change photo</button>
+              {profileLoading ? (
+                <div className="max-w-lg space-y-4">
+                  <Skeleton className="h-16 w-16 rounded-full" />
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                  <Skeleton className="h-24 w-full rounded-lg" />
+                  <Skeleton className="h-10 w-full rounded-lg" />
                 </div>
-                <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
-                <div>
-                  <textarea value={profileBio} onChange={e => setProfileBio(e.target.value.slice(0, 200))}
-                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" rows={3} />
-                  <p className="text-right text-xs text-muted-foreground">{profileBio.length}/200</p>
-                </div>
-                <div>
-                  <p className="mb-2 text-sm font-medium text-foreground">Occupation</p>
-                  <div className="flex gap-2">
-                    {(["student", "working", "other"] as const).map(o => (
-                      <button key={o} onClick={() => setProfileOccupation(o)}
-                        className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                          profileOccupation === o ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
-                        }`}>
-                        {o}
-                      </button>
-                    ))}
+              ) : (
+                <div className="max-w-lg space-y-4">
+                  <div className="flex items-center gap-4">
+                    <img src={user?.imageUrl ?? ""} alt="" className="h-16 w-16 rounded-full object-cover" />
+                    <button className="text-sm font-medium text-primary">Change photo</button>
                   </div>
+                  <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
+                    placeholder="Display name"
+                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
+                  <div>
+                    <textarea value={profileBio} onChange={e => setProfileBio(e.target.value.slice(0, 500))}
+                      placeholder="Short bio..."
+                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" rows={3} />
+                    <p className="text-right text-xs text-muted-foreground">{profileBio.length}/500</p>
+                  </div>
+                  <div>
+                    <p className="mb-2 text-sm font-medium text-foreground">Occupation</p>
+                    <div className="flex gap-2">
+                      {([Occupation.Student, Occupation.Working, Occupation.Other] as const).map(o => (
+                        <button key={o} onClick={() => setProfileOccupation(o)}
+                          className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                            profileOccupation === o ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                          }`}>
+                          {o}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <h3 className="mb-2 text-sm font-semibold text-foreground">Verification</h3>
+                    {profile?.is_email_verified ? (
+                      <p className="text-xs text-success">✓ Email verified</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">✗ Email not verified</p>
+                    )}
+                    {profile?.is_phone_verified ? (
+                      <p className="text-xs text-success">✓ Phone verified</p>
+                    ) : (
+                      <p className="text-xs text-warning">
+                        ⚠ Phone not verified · <Link to="/verify-phone" className="font-medium text-primary">Verify now →</Link>
+                      </p>
+                    )}
+                  </div>
+                  <button onClick={handleSaveProfile} disabled={savingProfile}
+                    className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50">
+                    {savingProfile ? "Saving..." : "Save changes"}
+                  </button>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <h3 className="mb-2 text-sm font-semibold text-foreground">Verification</h3>
-                  <p className="text-xs text-success">✓ Email verified</p>
-                  {mockCurrentUser.isPhoneVerified ? (
-                    <p className="text-xs text-success">✓ Phone verified</p>
-                  ) : (
-                    <p className="text-xs text-warning">
-                      ⚠ Phone not verified · <Link to="/verify-phone" className="font-medium text-primary">Verify now →</Link>
-                    </p>
-                  )}
-                </div>
-                <button onClick={handleSaveProfile} disabled={savingProfile}
-                  className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50">
-                  {savingProfile ? "Saving..." : "Save changes"}
-                </button>
-              </div>
+              )}
             </>
           )}
         </div>

@@ -29,3 +29,8 @@ select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "RUF"]
 ignore = [
     "UP046",  # Generic[T] syntax — matches class-reference.py architecture
 ]
+
+[tool.ruff.lint.isort]
+# Our `profile` package shadows Python's stdlib `profile` module.
+# Without this, isort treats it as stdlib and sorts it before `typing`.
+known-first-party = ["profile"]

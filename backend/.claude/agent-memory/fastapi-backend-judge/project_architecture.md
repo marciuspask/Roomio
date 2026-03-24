@@ -22,7 +22,7 @@ type: project
 
 ## Module layout
 - `src/settings/` — full stack: models, router, service, repositories, errors, ORM models, UoW.
-- `src/profile/` — stub: in-memory store, no DB layer yet. `ProfileError` lives inside `router.py` (not a dedicated `errors.py`). This is an architectural debt item.
+- `src/profile/` — full stack: models, router, service, repositories, errors, ORM models, UoW. Reviewed 2026-03-24. See profile module notes below.
 - `src/routes/` — thin utility routes: health, me (no service layer needed).
 - `src/auth/` — Clerk JWT authentication. `AuthError` lives in `dependencies.py` (not a dedicated `errors.py`).
 - `src/listings/` — full stack: models, router, service, repositories, errors, ORM models, UoW. Reviewed 2026-03-23 — CLEAN, zero violations across all 14 rules.
@@ -35,9 +35,27 @@ type: project
 - `ListingError` in `errors.py` inherits `BaseAppError`, has two `@classmethod` factories both with `error_code` and explicit `context` (Rules 5, 6, 7 satisfied).
 - DELETE endpoint uses `response_model=None` with HTTP 204 — this is the correct FastAPI pattern and is not a Rule 13 violation.
 
+## profile module notes (reviewed 2026-03-24)
+- Module is now a full DB-backed stack: models, router, service, repositories, errors, ORM models, UoW.
+- `ProfileError` correctly lives in `src/profile/errors.py` and inherits `BaseAppError`. Previous debt (error class inside router.py) is resolved.
+- `ProfileUnitOfWork` in `src/profile/database/unit_of_work.py` imports from `models` (top-level) and `profile.repositories` — correct structure.
+- Rule 1: Both endpoints return `ProfileResponse(data=result)` — CLEAN.
+- Rule 2: All fields in `Profile`, `ProfileUpdate`, `ProfileResponse` have `Field(description=...)` — CLEAN.
+- Rule 3: Both endpoints wrap in `ProfileResponse(data=...)` — CLEAN.
+- Rule 4: `Occupation` is a proper `StrEnum` — CLEAN.
+- Rule 5: `ProfileError(BaseAppError)` in `errors.py` — CLEAN.
+- Rule 6: Errors only created via `@classmethod` factories — CLEAN.
+- Rule 7: Both factory methods pass `error_code` and `context` inside `ErrorData` — CLEAN.
+- Rule 8: No raw `HTTPException` anywhere in the module — CLEAN.
+- Rule 9: `ProfileRepository` returns Pydantic `Profile` models via `to_model()` — CLEAN.
+- Rule 10: Repositories use `flush()` only (via `BaseRepository._create/_update`) — CLEAN.
+- Rule 11: `ProfileRepository` inherits `TenantRepository` — CLEAN.
+- Rule 12: `router.py` is thin — delegates entirely to `ProfileService` — CLEAN.
+- Rule 13: Both endpoints have `response_model=ProfileResponse` — CLEAN.
+- Rule 14: Router imports `ProfileServiceDep` from `di.py` — CLEAN.
+
 ## Known architectural debt
-- `src/profile/router.py` contains business logic (in-memory CRUD, fallback default creation) directly in router functions — violates Rule 12.
-- `src/profile/router.py` defines `ProfileError` inside the router module — should move to a dedicated `errors.py`.
+- (Profile router debt resolved as of 2026-03-24 review.)
 - `src/auth/dependencies.py:118` has an inline `Depends(get_tenant_context_from_header)` inside `require_admin` that is not aliased through `di.py` — WARNING (internal wiring, not a public router annotation).
 - `src/routes/health.py` and `src/routes/me.py` return flat Pydantic models without a `Response(data=...)` envelope — teams have implicitly waived Rule 3 for these utility endpoints.
 

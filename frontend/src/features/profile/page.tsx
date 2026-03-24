@@ -8,8 +8,6 @@ export default function ProfilePage() {
   const updateProfile = useUpdateProfile();
   const { toast } = useToast();
 
-  console.log('profile hook result:', { data, isLoading, isError });
-
   const profile = data?.data;
 
   const [displayName, setDisplayName] = useState("");

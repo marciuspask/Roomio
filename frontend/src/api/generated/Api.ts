@@ -67,7 +67,7 @@ export class Api<
    * @request GET:/api/v1/profile/
    */
   getProfileApiV1ProfileGet = (params: RequestParams = {}) =>
-    this.request<ProfileResponse, any>({
+    this.request<ProfileResponse, HTTPValidationError>({
       path: `/api/v1/profile/`,
       method: "GET",
       format: "json",
@@ -90,6 +90,24 @@ export class Api<
       method: "PUT",
       body: data,
       type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags profile
+   * @name GetPublicProfileApiV1UsersUserIdProfileGet
+   * @summary Get Public Profile
+   * @request GET:/api/v1/users/{user_id}/profile
+   */
+  getPublicProfileApiV1UsersUserIdProfileGet = (
+    userId: string,
+    params: RequestParams = {},
+  ) =>
+    this.request<ProfileResponse, HTTPValidationError>({
+      path: `/api/v1/users/${userId}/profile`,
+      method: "GET",
       format: "json",
       ...params,
     });

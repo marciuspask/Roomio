@@ -1,10 +1,10 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import TypeBadge from "@/features/listings/TypeBadge";
 import FeaturedBadge from "@/features/listings/FeaturedBadge";
-import { useListing } from "@/api/hooks";
+import { useListing, usePublicProfile } from "@/api/hooks";
 import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Calendar, DollarSign, Home, User, Flag, Lightbulb } from "lucide-react";
@@ -14,6 +14,8 @@ const ListingDetail = () => {
   const { id } = useParams();
   const { data, isLoading, isError } = useListing(id!);
   const listing = data?.data;
+  const { data: posterData } = usePublicProfile(listing?.tenant_id ?? "");
+  const poster = posterData?.data;
   const { isSignedIn: isLoggedIn } = useAuth();
   const { toast } = useToast();
   const [showFullDesc, setShowFullDesc] = useState(false);
@@ -176,20 +178,28 @@ const ListingDetail = () => {
             </div>
 
             {/* About the poster */}
-            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <Link
+              to={`/users/${listing.tenant_id}`}
+              className="block rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:border-primary/60"
+            >
               <h2 className="mb-3 font-heading text-lg font-bold text-foreground">About the poster</h2>
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
-                  <span className="text-lg font-bold text-primary">{listing.city[0]}</span>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                  <span className="text-lg font-bold text-primary">
+                    {(poster?.display_name ?? listing.city)[0].toUpperCase()}
+                  </span>
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-foreground">
-                    {listing.listing_type === "offering" ? "Room owner" : "Room seeker"}
+                    {poster?.display_name ?? (listing.listing_type === "offering" ? "Room owner" : "Room seeker")}
                   </div>
-                  <div className="text-xs text-muted-foreground">{listing.city}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {poster?.is_phone_verified ? "✓ Phone verified · " : ""}{listing.city}
+                  </div>
                 </div>
+                <span className="ml-auto text-xs text-primary">View profile →</span>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* Right sidebar — contact card */}
