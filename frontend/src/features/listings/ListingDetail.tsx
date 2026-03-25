@@ -1,10 +1,10 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import TypeBadge from "@/features/listings/TypeBadge";
 import FeaturedBadge from "@/features/listings/FeaturedBadge";
-import { useListing, usePublicProfile } from "@/api/hooks";
+import { useListing, usePublicProfile, useStartConversation } from "@/api/hooks";
 import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Calendar, DollarSign, Home, User, Flag, Lightbulb } from "lucide-react";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const ListingDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { data, isLoading, isError } = useListing(id!);
   const listing = data?.data;
   const { data: posterData } = usePublicProfile(listing?.tenant_id ?? "");
@@ -22,6 +23,7 @@ const ListingDetail = () => {
   const [messageState, setMessageState] = useState<"idle" | "composing" | "sent">("idle");
   const [messageText, setMessageText] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const { mutate: startConversation, isPending: startingConversation } = useStartConversation();
 
   const handleContact = () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
@@ -29,8 +31,14 @@ const ListingDetail = () => {
   };
 
   const handleSend = () => {
-    if (!messageText.trim()) return;
-    setTimeout(() => setMessageState("sent"), 800);
+    if (!messageText.trim() || !id) return;
+    startConversation(
+      { listingId: id, body: messageText },
+      {
+        onSuccess: () => navigate("/dashboard/messages"),
+        onError: () => toast({ title: "Failed to send message", variant: "destructive" }),
+      },
+    );
   };
 
   if (isLoading) {
@@ -229,9 +237,10 @@ const ListingDetail = () => {
                   />
                   <button
                     onClick={handleSend}
-                    className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors"
+                    disabled={startingConversation}
+                    className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50"
                   >
-                    Send
+                    {startingConversation ? "Sending…" : "Send"}
                   </button>
                 </div>
               )}

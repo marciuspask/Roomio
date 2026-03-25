@@ -12,12 +12,17 @@
 
 import {
   AdminTestResponse,
+  ConversationResponse,
+  ConversationsResponse,
   HTTPValidationError,
   ListingCreate,
   ListingResponse,
   ListingUpdate,
   ListingsResponse,
   MeResponse,
+  MessageCreate,
+  MessageResponse,
+  MessagesResponse,
   ProfileResponse,
   ProfileUpdate,
   SettingsResponse,
@@ -250,6 +255,99 @@ export class Api<
     this.request<void, HTTPValidationError>({
       path: `/api/v1/listings/${listingId}`,
       method: "DELETE",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags messages
+   * @name GetMyConversationsApiV1ConversationsGet
+   * @summary Get My Conversations
+   * @request GET:/api/v1/conversations/
+   */
+  getMyConversationsApiV1ConversationsGet = (params: RequestParams = {}) =>
+    this.request<ConversationsResponse, HTTPValidationError>({
+      path: `/api/v1/conversations/`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags messages
+   * @name GetConversationApiV1ConversationsConversationIdGet
+   * @summary Get Conversation
+   * @request GET:/api/v1/conversations/{conversation_id}
+   */
+  getConversationApiV1ConversationsConversationIdGet = (
+    conversationId: string,
+    params: RequestParams = {},
+  ) =>
+    this.request<ConversationResponse, HTTPValidationError>({
+      path: `/api/v1/conversations/${conversationId}`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags messages
+   * @name GetMessagesApiV1ConversationsConversationIdMessagesGet
+   * @summary Get Messages
+   * @request GET:/api/v1/conversations/{conversation_id}/messages
+   */
+  getMessagesApiV1ConversationsConversationIdMessagesGet = (
+    conversationId: string,
+    params: RequestParams = {},
+  ) =>
+    this.request<MessagesResponse, HTTPValidationError>({
+      path: `/api/v1/conversations/${conversationId}/messages`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags messages
+   * @name SendMessageApiV1ConversationsConversationIdMessagesPost
+   * @summary Send Message
+   * @request POST:/api/v1/conversations/{conversation_id}/messages
+   */
+  sendMessageApiV1ConversationsConversationIdMessagesPost = (
+    conversationId: string,
+    data: MessageCreate,
+    params: RequestParams = {},
+  ) =>
+    this.request<MessageResponse, HTTPValidationError>({
+      path: `/api/v1/conversations/${conversationId}/messages`,
+      method: "POST",
+      body: data,
+      type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags messages
+   * @name StartConversationApiV1ListingsListingIdMessagePost
+   * @summary Start Conversation
+   * @request POST:/api/v1/listings/{listing_id}/message
+   */
+  startConversationApiV1ListingsListingIdMessagePost = (
+    listingId: string,
+    data: MessageCreate,
+    params: RequestParams = {},
+  ) =>
+    this.request<ConversationResponse, HTTPValidationError>({
+      path: `/api/v1/listings/${listingId}/message`,
+      method: "POST",
+      body: data,
+      type: ContentType.Json,
+      format: "json",
       ...params,
     });
 }

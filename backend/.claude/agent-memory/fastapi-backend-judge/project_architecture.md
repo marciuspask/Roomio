@@ -54,6 +54,22 @@ type: project
 - Rule 13: Both endpoints have `response_model=ProfileResponse` — CLEAN.
 - Rule 14: Router imports `ProfileServiceDep` from `di.py` — CLEAN.
 
+## messages module notes (reviewed 2026-03-25)
+- `MessageError(BaseAppError)` in `errors.py` with three `@classmethod` factories — all set `error_code` and `context` (Rules 5, 6, 7 satisfied).
+- `ConversationRepository` and `MessageRepository` both inherit `BaseRepository` (not `TenantRepository`) — correct: conversations are shared between two participants, not owned by a single tenant.
+- All repository methods return Pydantic models via `to_model()`/`to_model_list()` — CLEAN.
+- Repositories use `flush()` only (never `commit()`) — CLEAN.
+- `ConversationStatus` is a proper `StrEnum` — CLEAN (Rule 4).
+- All models use `Field(description=...)` on every field — CLEAN (Rule 2).
+- All five endpoints wrapped in `ConversationsResponse(data=...)`, `ConversationResponse(data=...)`, `MessagesResponse(data=...)` — CLEAN (Rules 1, 3).
+- All five endpoints have `response_model=` — CLEAN (Rule 13).
+- Router uses `MessagesServiceDep` from `di.py`; `di.py` wires `get_messages_service` with `TenantDep` — auth enforced on all endpoints (Rules 6, 14).
+- No raw `HTTPException` anywhere in the module — CLEAN (Rule 8).
+- Two routers exported: `router` (conversation routes) and `listings_router` (prefixed `/api/v1/listings`) — both registered in `main.py`.
+- N+1 WARNING: `get_my_conversations` fetches last_message per-conversation in a Python loop (one extra query per conversation). Not a rule violation but a performance concern worth tracking.
+- `send_message` returns `MessagesResponse(data=[msg])` (list-of-one). Semantically a WARNING: a single message is returned as a list response. Not a hard rule violation since `response_model=MessagesResponse` is set, but consider a `MessageResponse(data=Message)` envelope for this endpoint.
+- `start_conversation` uses `MessageError.forbidden` to signal "owner cannot message themselves" — reuses the CONVERSATION_FORBIDDEN error code for a listing-context rejection. Not a hard violation but the `error_code` and `context` carry `listing_id` rather than `conversation_id`, which is accurate.
+
 ## Known architectural debt
 - (Profile router debt resolved as of 2026-03-24 review.)
 - `src/auth/dependencies.py:118` has an inline `Depends(get_tenant_context_from_header)` inside `require_admin` that is not aliased through `di.py` — WARNING (internal wiring, not a public router annotation).

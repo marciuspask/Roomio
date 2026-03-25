@@ -63,6 +63,12 @@ export enum EmailDigest {
   Never = "never",
 }
 
+/** ConversationStatus */
+export enum ConversationStatus {
+  Active = "active",
+  Archived = "archived",
+}
+
 /** AuthMethod */
 export enum AuthMethod {
   Bearer = "bearer",
@@ -86,6 +92,56 @@ export interface AdminTestData {
 export interface AdminTestResponse {
   /** Admin test result */
   data: AdminTestData;
+}
+
+/** Conversation */
+export interface Conversation {
+  /**
+   * Id
+   * Unique conversation identifier (UUID)
+   */
+  id: string;
+  /**
+   * Listing Id
+   * Identifier of the listing this conversation is about
+   */
+  listing_id: string;
+  /**
+   * Participant Ids
+   * Tenant IDs of both participants
+   */
+  participant_ids: string[];
+  /** Current status of the conversation */
+  status: ConversationStatus;
+  /** Most recent message */
+  last_message?: Message | null;
+  /**
+   * Created At
+   * Timestamp when the conversation was created
+   * @format date-time
+   */
+  created_at: string;
+  /**
+   * Updated At
+   * Timestamp when the conversation was last updated
+   * @format date-time
+   */
+  updated_at: string;
+}
+
+/** ConversationResponse */
+export interface ConversationResponse {
+  /** The conversation data */
+  data: Conversation;
+}
+
+/** ConversationsResponse */
+export interface ConversationsResponse {
+  /**
+   * Data
+   * List of conversations
+   */
+  data: Conversation[];
 }
 
 /** HTTPValidationError */
@@ -381,6 +437,61 @@ export interface MeData {
 export interface MeResponse {
   /** Authenticated user context */
   data: MeData;
+}
+
+/** Message */
+export interface Message {
+  /**
+   * Id
+   * Unique message identifier (UUID)
+   */
+  id: string;
+  /**
+   * Conversation Id
+   * Conversation this message belongs to
+   */
+  conversation_id: string;
+  /**
+   * Sender Id
+   * Tenant identifier of the user who sent the message
+   */
+  sender_id: string;
+  /**
+   * Body
+   * Text content of the message
+   */
+  body: string;
+  /**
+   * Created At
+   * Timestamp when the message was sent
+   * @format date-time
+   */
+  created_at: string;
+}
+
+/** MessageCreate */
+export interface MessageCreate {
+  /**
+   * Body
+   * Text content of the message
+   * @maxLength 2000
+   */
+  body: string;
+}
+
+/** MessageResponse */
+export interface MessageResponse {
+  /** The message data */
+  data: Message;
+}
+
+/** MessagesResponse */
+export interface MessagesResponse {
+  /**
+   * Data
+   * List of messages in the conversation
+   */
+  data: Message[];
 }
 
 /** Profile */

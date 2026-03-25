@@ -1,15 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/react";
-import { mockConversations } from "@/lib/mockData";
-import { useMyListings, useDeleteListing, useProfile, useUpdateProfile } from "@/api/hooks";
+import { useUser, useAuth } from "@clerk/react";
+import {
+  useMyListings, useDeleteListing, useProfile, useUpdateProfile,
+  useConversations, useConversationMessages, useSendMessage, usePublicProfile,
+} from "@/api/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Occupation } from "@/api/generated/data-contracts";
 import { useToast } from "@/hooks/use-toast";
 import { Home, LayoutList, MessageSquare, User, Plus, Zap, ArrowLeft, Trash2 } from "lucide-react";
 
+const ParticipantName = ({ participantIds, currentUserId }: { participantIds: string[]; currentUserId: string | null | undefined }) => {
+  const otherId = participantIds.find(id => id !== currentUserId) ?? "";
+  const { data } = usePublicProfile(otherId);
+  const displayName = data?.data.display_name ?? `User …${otherId.slice(-6)}`;
+  return <>{displayName}</>;
+};
+
 const Dashboard = () => {
   const { user } = useUser();
+  const { userId: clerkUserId } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,25 +35,30 @@ const Dashboard = () => {
   const profile = profileData?.data;
   const { mutate: saveProfile, isPending: savingProfile } = useUpdateProfile();
 
+  const { data: conversationsData, isLoading: convsLoading } = useConversations();
+  const conversations = conversationsData?.data ?? [];
+
   const [profileName, setProfileName] = useState("");
   const [profileBio, setProfileBio] = useState("");
   const [profileOccupation, setProfileOccupation] = useState<Occupation | null>(null);
+  const hasInitialized = useRef(false);
 
-  // Pre-fill form when profile data arrives
   useEffect(() => {
-    if (profile) {
+    if (profile && !hasInitialized.current) {
+      hasInitialized.current = true;
       setProfileName(profile.display_name);
       setProfileBio(profile.bio ?? "");
       setProfileOccupation(profile.occupation ?? null);
     }
   }, [profile]);
 
-  const totalUnread = mockConversations.reduce((s, c) => s + c.unread, 0);
-
   // Messages state
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
   const [newMsg, setNewMsg] = useState("");
-  const [extraMessages, setExtraMessages] = useState<Record<string, { senderId: string; text: string; time: string }[]>>({});
+
+  const { data: messagesData, isLoading: messagesLoading } = useConversationMessages(selectedConvo ?? "");
+  const messages = messagesData?.data ?? [];
+  const { mutate: sendMessage, isPending: sending } = useSendMessage();
 
   // Boost modal
   const [boostModal, setBoostModal] = useState<string | null>(null);
@@ -53,17 +68,16 @@ const Dashboard = () => {
   const navItems = [
     { id: "overview", label: "Overview", icon: Home, path: "/dashboard" },
     { id: "listings", label: "My Listings", icon: LayoutList, path: "/dashboard/listings" },
-    { id: "messages", label: "Messages", icon: MessageSquare, path: "/dashboard/messages", badge: totalUnread },
+    { id: "messages", label: "Messages", icon: MessageSquare, path: "/dashboard/messages" },
     { id: "profile", label: "My Profile", icon: User, path: "/dashboard/profile" },
   ];
 
   const handleSendMessage = (convoId: string) => {
     if (!newMsg.trim()) return;
-    setExtraMessages(prev => ({
-      ...prev,
-      [convoId]: [...(prev[convoId] || []), { senderId: "current", text: newMsg, time: new Date().toISOString() }]
-    }));
-    setNewMsg("");
+    sendMessage(
+      { conversationId: convoId, body: newMsg },
+      { onSuccess: () => setNewMsg("") },
+    );
   };
 
   const handleBoost = (id: string) => {
@@ -86,7 +100,7 @@ const Dashboard = () => {
     );
   };
 
-  const selectedConversation = mockConversations.find(c => c.id === selectedConvo);
+  const selectedConversation = conversations.find(c => c.id === selectedConvo) ?? null;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -107,7 +121,6 @@ const Dashboard = () => {
               }`}>
               <item.icon size={18} />
               {item.label}
-              {item.badge ? <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">{item.badge}</span> : null}
             </Link>
           ))}
         </nav>
@@ -155,7 +168,7 @@ const Dashboard = () => {
               <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-2">
                 {[
                   { label: "Active listings", value: listingsLoading ? "—" : myListings.length },
-                  { label: "Unread messages", value: totalUnread },
+                  { label: "Conversations", value: convsLoading ? "—" : conversations.length },
                 ].map(s => (
                   <div key={s.label} className="rounded-xl border border-border bg-card p-4 shadow-sm">
                     <div className="font-heading text-2xl font-bold text-foreground">{s.value}</div>
@@ -194,28 +207,36 @@ const Dashboard = () => {
                 )}
               </div>
 
-              {/* Recent messages */}
+              {/* Recent conversations */}
               <div>
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="font-heading text-lg font-bold text-foreground">Recent messages</h2>
                   <Link to="/dashboard/messages" className="text-xs font-medium text-primary">View all →</Link>
                 </div>
-                <div className="space-y-2">
-                  {mockConversations.map(c => (
-                    <Link key={c.id} to="/dashboard/messages"
-                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm hover:border-primary transition-colors">
-                      <img src={c.withUser.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-foreground">{c.withUser.name}</span>
-                          <span className="truncate text-xs text-muted-foreground">{c.listingTitle}</span>
+                {convsLoading ? (
+                  <div className="space-y-2">
+                    {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+                  </div>
+                ) : conversations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No messages yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {conversations.slice(0, 3).map(c => (
+                      <Link key={c.id} to="/dashboard/messages"
+                        className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm hover:border-primary transition-colors">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                          <User size={16} className="text-primary" />
                         </div>
-                        <p className="truncate text-xs text-muted-foreground">{c.lastMessage}</p>
-                      </div>
-                      {c.unread > 0 && <div className="h-2 w-2 rounded-full bg-primary" />}
-                    </Link>
-                  ))}
-                </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground">
+                            <ParticipantName participantIds={c.participant_ids} currentUserId={clerkUserId} />
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">{c.last_message?.body ?? "No messages yet"}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -295,25 +316,35 @@ const Dashboard = () => {
               {/* Conversation list */}
               <div className={`${selectedConvo ? "hidden md:block" : "block"} w-full md:w-80 shrink-0 space-y-1 overflow-y-auto`}>
                 <h1 className="mb-4 font-heading text-2xl font-bold text-foreground">Messages</h1>
-                {mockConversations.map(c => (
-                  <button key={c.id} onClick={() => setSelectedConvo(c.id)}
-                    className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
-                      selectedConvo === c.id ? "border-l-2 border-primary bg-primary-light" : "hover:bg-surface-elevated"
-                    }`}>
-                    <img src={c.withUser.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">{c.withUser.name}</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {new Date(c.lastMessageTime).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                        </span>
+                {convsLoading ? (
+                  <div className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+                  </div>
+                ) : conversations.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">No conversations yet.</p>
+                ) : (
+                  conversations.map(c => (
+                    <button key={c.id} onClick={() => setSelectedConvo(c.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
+                        selectedConvo === c.id ? "border-l-2 border-primary bg-primary-light" : "hover:bg-surface-elevated"
+                      }`}>
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                        <User size={16} className="text-primary" />
                       </div>
-                      <p className="truncate text-xs text-muted-foreground">{c.listingTitle}</p>
-                      <p className="truncate text-xs text-muted-foreground">{c.lastMessage}</p>
-                    </div>
-                    {c.unread > 0 && <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
-                  </button>
-                ))}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-foreground">
+                            <ParticipantName participantIds={c.participant_ids} currentUserId={clerkUserId} />
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(c.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                          </span>
+                        </div>
+                        <p className="truncate text-xs text-muted-foreground">{c.last_message?.body ?? "No messages yet"}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
 
               {/* Message thread */}
@@ -321,21 +352,31 @@ const Dashboard = () => {
                 <div className={`${selectedConvo ? "flex" : "hidden md:flex"} flex-1 flex-col rounded-xl border border-border bg-card`}>
                   <div className="flex items-center gap-3 border-b border-border p-4">
                     <button onClick={() => setSelectedConvo(null)} className="md:hidden"><ArrowLeft size={18} /></button>
-                    <img src={selectedConversation.withUser.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                      <User size={14} className="text-primary" />
+                    </div>
                     <div>
-                      <span className="text-sm font-medium text-foreground">{selectedConversation.withUser.name}</span>
-                      <p className="text-xs text-muted-foreground">{selectedConversation.listingTitle}</p>
+                      <span className="text-sm font-medium text-foreground">
+                        <ParticipantName participantIds={selectedConversation.participant_ids} currentUserId={clerkUserId} />
+                      </span>
+                      <p className="text-xs text-muted-foreground">
+                        <Link to={`/listings/${selectedConversation.listing_id}`} className="hover:text-primary">View listing →</Link>
+                      </p>
                     </div>
                   </div>
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {[...selectedConversation.messages, ...(extraMessages[selectedConversation.id] || [])].map((m, i) => (
-                      <div key={i} className={`flex ${m.senderId === "current" ? "justify-end" : "justify-start"}`}>
+                    {messagesLoading ? (
+                      <div className="space-y-2">
+                        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 rounded-xl" />)}
+                      </div>
+                    ) : messages.map(m => (
+                      <div key={m.id} className={`flex ${m.sender_id === clerkUserId ? "justify-end" : "justify-start"}`}>
                         <div className={`max-w-[70%] rounded-xl px-3 py-2 text-sm ${
-                          m.senderId === "current"
+                          m.sender_id === clerkUserId
                             ? "bg-primary text-primary-foreground"
                             : "bg-surface-elevated text-foreground"
                         }`}>
-                          {m.text}
+                          {m.body}
                         </div>
                       </div>
                     ))}
@@ -344,13 +385,16 @@ const Dashboard = () => {
                     <input
                       value={newMsg}
                       onChange={e => setNewMsg(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && handleSendMessage(selectedConversation.id)}
+                      onKeyDown={e => e.key === "Enter" && !sending && handleSendMessage(selectedConversation.id)}
                       placeholder="Type a message..."
                       className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
                     />
-                    <button onClick={() => handleSendMessage(selectedConversation.id)}
-                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-                      Send
+                    <button
+                      onClick={() => handleSendMessage(selectedConversation.id)}
+                      disabled={sending}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                    >
+                      {sending ? "…" : "Send"}
                     </button>
                   </div>
                 </div>
