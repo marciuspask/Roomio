@@ -116,6 +116,12 @@ export interface Conversation {
   /** Most recent message */
   last_message?: Message | null;
   /**
+   * Unread Count
+   * Unread message count for the requesting user
+   * @default 0
+   */
+  unread_count?: number;
+  /**
    * Created At
    * Timestamp when the conversation was created
    * @format date-time
@@ -537,6 +543,11 @@ export interface Profile {
    */
   is_phone_verified?: boolean;
   /**
+   * Image Url
+   * Profile photo URL from Clerk
+   */
+  image_url?: string | null;
+  /**
    * Created At
    * Timestamp when the profile was created
    * @format date-time
@@ -585,6 +596,11 @@ export interface ProfileUpdate {
    * Whether the user's phone number has been verified
    */
   is_phone_verified?: boolean | null;
+  /**
+   * Image Url
+   * Profile photo URL from Clerk
+   */
+  image_url?: string | null;
 }
 
 /** Settings */

@@ -43,11 +43,14 @@ class MessagesService:
         tenant_id = self._tenant_context.tenant_id
         async with self._uow() as uow:
             conversations = await uow.conversations.get_for_participant(tenant_id)
-            last_messages = await uow.messages.get_last_messages_bulk(
-                [c.id for c in conversations],
-            )
+            conv_ids = [c.id for c in conversations]
+            last_messages = await uow.messages.get_last_messages_bulk(conv_ids)
+            unread_counts = await uow.messages.get_unread_counts_bulk(conv_ids, tenant_id)
         return [
-            conv.model_copy(update={"last_message": last_messages.get(conv.id)})
+            conv.model_copy(update={
+                "last_message": last_messages.get(conv.id),
+                "unread_count": unread_counts.get(conv.id, 0),
+            })
             for conv in conversations
         ]
 
@@ -104,6 +107,16 @@ class MessagesService:
             conversation_id=conv.id,
         )
         return conv.model_copy(update={"last_message": msg})
+
+    async def mark_as_read(self, conversation_id: str) -> None:
+        tenant_id = self._tenant_context.tenant_id
+        async with self._uow() as uow:
+            conv = await uow.conversations.get_by_id(conversation_id)
+            if conv is None:
+                raise MessageError.not_found(conversation_id)
+            if not self._is_participant(conv):
+                raise MessageError.forbidden(conversation_id)
+            await uow.messages.mark_as_read(conversation_id, tenant_id)
 
     async def send_message(self, conversation_id: str, body: str) -> Message:
         tenant_id = self._tenant_context.tenant_id

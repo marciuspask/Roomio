@@ -44,6 +44,17 @@ async def get_messages(
 
 
 @router.post(
+    "/api/v1/conversations/{conversation_id}/read",
+    status_code=204,
+)
+async def mark_as_read(
+    conversation_id: str,
+    service: MessagesServiceDep,
+) -> None:
+    await service.mark_as_read(conversation_id)
+
+
+@router.post(
     "/api/v1/conversations/{conversation_id}/messages",
     response_model=MessageResponse,
     status_code=201,

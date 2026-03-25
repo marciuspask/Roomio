@@ -27,6 +27,7 @@ class Conversation(BaseModel):
     participant_ids: list[str] = Field(description="Tenant IDs of both participants")
     status: ConversationStatus = Field(description="Current status of the conversation")
     last_message: Message | None = Field(default=None, description="Most recent message")
+    unread_count: int = Field(default=0, description="Unread message count for the requesting user")
     created_at: datetime = Field(description="Timestamp when the conversation was created")
     updated_at: datetime = Field(description="Timestamp when the conversation was last updated")
 

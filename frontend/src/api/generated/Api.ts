@@ -333,6 +333,23 @@ export class Api<
    * No description
    *
    * @tags messages
+   * @name MarkAsReadApiV1ConversationsConversationIdReadPost
+   * @summary Mark As Read
+   * @request POST:/api/v1/conversations/{conversation_id}/read
+   */
+  markAsReadApiV1ConversationsConversationIdReadPost = (
+    conversationId: string,
+    params: RequestParams = {},
+  ) =>
+    this.request<void, HTTPValidationError>({
+      path: `/api/v1/conversations/${conversationId}/read`,
+      method: "POST",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags messages
    * @name StartConversationApiV1ListingsListingIdMessagePost
    * @summary Start Conversation
    * @request POST:/api/v1/listings/{listing_id}/message

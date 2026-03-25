@@ -21,6 +21,7 @@ class Profile(BaseModel):
     email: str | None = Field(default=None, description="User's email address")
     is_email_verified: bool = Field(default=False, description="Email has been verified")
     is_phone_verified: bool = Field(default=False, description="Phone number has been verified")
+    image_url: str | None = Field(default=None, description="Profile photo URL from Clerk")
     created_at: datetime = Field(description="Timestamp when the profile was created")
     updated_at: datetime = Field(description="Timestamp when the profile was last updated")
 
@@ -45,6 +46,7 @@ class ProfileUpdate(BaseModel):
     is_phone_verified: bool | None = Field(
         default=None, description="Whether the user's phone number has been verified"
     )
+    image_url: str | None = Field(default=None, description="Profile photo URL from Clerk")
 
 
 class ProfileResponse(BaseModel):

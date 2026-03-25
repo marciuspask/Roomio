@@ -24,3 +24,4 @@ class ProfileORM(Base, TimestampModel, TenantAwareModel):
     is_phone_verified: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false",
     )
+    image_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)

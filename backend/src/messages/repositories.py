@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common.database.repository import BaseRepository
@@ -129,6 +129,46 @@ class MessageRepository(BaseRepository[MessageORM, Message]):
         if entity is None:
             return None
         return self.to_model(entity)
+
+    async def get_unread_count(self, conversation_id: str, reader_id: str) -> int:
+        """Count messages in a conversation not sent by reader_id that are unread."""
+        stmt = (
+            select(func.count())
+            .select_from(MessageORM)
+            .where(MessageORM.conversation_id == conversation_id)
+            .where(MessageORM.sender_id != reader_id)
+            .where(MessageORM.is_read.is_(False))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
+
+    async def get_unread_counts_bulk(
+        self, conversation_ids: list[str], reader_id: str,
+    ) -> dict[str, int]:
+        """Return unread count per conversation in one query."""
+        if not conversation_ids:
+            return {}
+        stmt = (
+            select(MessageORM.conversation_id, func.count().label("cnt"))
+            .where(MessageORM.conversation_id.in_(conversation_ids))
+            .where(MessageORM.sender_id != reader_id)
+            .where(MessageORM.is_read.is_(False))
+            .group_by(MessageORM.conversation_id)
+        )
+        result = await self.session.execute(stmt)
+        return {row.conversation_id: row.cnt for row in result.all()}
+
+    async def mark_as_read(self, conversation_id: str, reader_id: str) -> None:
+        """Mark all messages not sent by reader_id as read."""
+        stmt = (
+            update(MessageORM)
+            .where(MessageORM.conversation_id == conversation_id)
+            .where(MessageORM.sender_id != reader_id)
+            .where(MessageORM.is_read.is_(False))
+            .values(is_read=True)
+        )
+        await self.session.execute(stmt)
+        await self.session.flush()
 
     async def create_message(
         self,
