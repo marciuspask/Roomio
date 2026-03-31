@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useUser, useAuth } from "@clerk/react";
+import { useUser, useAuth, useClerk } from "@clerk/react";
 import {
   useMyListings, useDeleteListing, useProfile, useUpdateProfile,
   useConversations, useConversationMessages, useSendMessage, usePublicProfile, useMarkAsRead,
@@ -43,6 +43,7 @@ const ParticipantInfo = ({
 const Dashboard = () => {
   const { user } = useUser();
   const { userId: clerkUserId } = useAuth();
+  const { openUserProfile } = useClerk();
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -61,7 +62,7 @@ const Dashboard = () => {
   const { data: conversationsData, isLoading: convsLoading } = useConversations();
   const conversations = conversationsData?.data ?? [];
 
-  const [profileName, setProfileName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [profileBio, setProfileBio] = useState("");
   const [profileOccupation, setProfileOccupation] = useState<Occupation | null>(null);
   const hasInitialized = useRef(false);
@@ -71,11 +72,11 @@ const Dashboard = () => {
   useEffect(() => {
     if (profile && !hasInitialized.current) {
       hasInitialized.current = true;
-      setProfileName(profile.display_name);
+      setFullName(user?.fullName ?? profile.display_name ?? "");
       setProfileBio(profile.bio ?? "");
       setProfileOccupation(profile.occupation ?? null);
     }
-  }, [profile]);
+  }, [profile, user]);
 
   // Messages state
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
@@ -146,14 +147,22 @@ const Dashboard = () => {
     }
   };
 
-  const handleSaveProfile = () => {
-    saveProfile(
-      { display_name: profileName, bio: profileBio, occupation: profileOccupation },
-      {
-        onSuccess: () => toast({ title: "Profile updated ✓" }),
-        onError: () => toast({ title: "Failed to save profile", variant: "destructive" }),
-      },
-    );
+  const handleSaveProfile = async () => {
+    const nameParts = fullName.trim().split(/\s+/);
+    const firstName = nameParts[0] ?? "";
+    const lastName = nameParts.slice(1).join(" ");
+    try {
+      await user?.update({ firstName, lastName });
+      saveProfile(
+        { display_name: fullName.trim(), bio: profileBio, occupation: profileOccupation },
+        {
+          onSuccess: () => toast({ title: "Profile updated ✓" }),
+          onError: () => toast({ title: "Failed to save profile", variant: "destructive" }),
+        },
+      );
+    } catch {
+      toast({ title: "Failed to update name", variant: "destructive" });
+    }
   };
 
   const selectedConversation = conversations.find(c => c.id === selectedConvo) ?? null;
@@ -518,9 +527,18 @@ const Dashboard = () => {
                   <Skeleton className="h-10 w-full rounded-lg" />
                 </div>
               ) : (
-                <div className="max-w-lg space-y-4">
+                <div className="max-w-lg space-y-5">
+                  {/* Avatar */}
                   <div className="flex items-center gap-4">
-                    <img src={user?.imageUrl ?? ""} alt="" className="h-16 w-16 rounded-full object-cover" />
+                    {user?.imageUrl ? (
+                      <img src={user.imageUrl} alt="" className="h-16 w-16 rounded-full object-cover" />
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
+                        <span className="text-xl font-bold text-primary">
+                          {(fullName || "?")[0].toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                     <button
                       onClick={() => photoInputRef.current?.click()}
@@ -530,28 +548,53 @@ const Dashboard = () => {
                       {uploadingPhoto ? "Uploading..." : "Change photo"}
                     </button>
                   </div>
-                  <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
-                    placeholder="Display name"
-                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
+
+                  {/* Full name */}
                   <div>
-                    <textarea value={profileBio} onChange={e => setProfileBio(e.target.value.slice(0, 500))}
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Full name</label>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      placeholder="Your full name"
+                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+
+                  {/* Bio */}
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Bio</label>
+                    <textarea
+                      value={profileBio}
+                      onChange={e => setProfileBio(e.target.value.slice(0, 500))}
                       placeholder="Short bio..."
-                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" rows={3} />
+                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                      rows={3}
+                    />
                     <p className="text-right text-xs text-muted-foreground">{profileBio.length}/500</p>
                   </div>
+
+                  {/* Occupation */}
                   <div>
                     <p className="mb-2 text-sm font-medium text-foreground">Occupation</p>
                     <div className="flex gap-2">
                       {([Occupation.Student, Occupation.Working, Occupation.Other] as const).map(o => (
-                        <button key={o} onClick={() => setProfileOccupation(o)}
+                        <button
+                          key={o}
+                          onClick={() => setProfileOccupation(o)}
                           className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                            profileOccupation === o ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
-                          }`}>
+                            profileOccupation === o
+                              ? "bg-primary text-primary-foreground"
+                              : "border border-border text-muted-foreground"
+                          }`}
+                        >
                           {o}
                         </button>
                       ))}
                     </div>
                   </div>
+
+                  {/* Verification */}
                   <div className="rounded-xl border border-border bg-card p-4">
                     <h3 className="mb-2 text-sm font-semibold text-foreground">Verification</h3>
                     {profile?.is_email_verified ? (
@@ -567,9 +610,22 @@ const Dashboard = () => {
                       </p>
                     )}
                   </div>
-                  <button onClick={handleSaveProfile} disabled={savingProfile}
-                    className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50">
+
+                  {/* Save */}
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={savingProfile}
+                    className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  >
                     {savingProfile ? "Saving..." : "Save changes"}
+                  </button>
+
+                  {/* Security link */}
+                  <button
+                    onClick={() => openUserProfile()}
+                    className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Password &amp; security →
                   </button>
                 </div>
               )}
