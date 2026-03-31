@@ -40,6 +40,7 @@ class Listing(BaseModel):
     gender_pref: GenderPref = Field(description="Preferred gender of the tenant")
     status: ListingStatus = Field(description="Current listing status")
     is_boosted: bool = Field(description="Whether the listing is boosted for higher visibility")
+    photos: list[str] = Field(default=[], description="List of photo URLs for the listing")
     created_at: datetime = Field(description="When the listing was created")
     updated_at: datetime = Field(description="When the listing was last updated")
 

@@ -54,14 +54,22 @@ const PublicProfilePage = () => {
           <div className="space-y-6">
             {/* Avatar + name */}
             <div className="flex items-center gap-5">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/20">
-                <span className="text-2xl font-bold text-primary">
-                  {profile.display_name?.[0]?.toUpperCase() ?? "?"}
-                </span>
-              </div>
+              {profile.image_url ? (
+                <img
+                  src={profile.image_url}
+                  alt={profile.display_name || "Roomio User"}
+                  className="h-20 w-20 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                  <span className="text-2xl font-bold text-primary">
+                    {(profile.display_name || "R")[0].toUpperCase()}
+                  </span>
+                </div>
+              )}
               <div>
                 <h1 className="font-heading text-2xl font-bold text-foreground">
-                  {profile.display_name}
+                  {profile.display_name || "Roomio User"}
                 </h1>
                 {profile.occupation && (
                   <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
@@ -80,26 +88,24 @@ const PublicProfilePage = () => {
               </div>
             )}
 
-            {/* Verification badges */}
-            <div className="rounded-xl border border-border bg-card p-5">
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Verification</h2>
-              <div className="flex flex-wrap gap-2">
-                <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  profile.is_email_verified
-                    ? "bg-success-bg text-success"
-                    : "bg-surface-elevated text-muted-foreground"
-                }`}>
-                  {profile.is_email_verified ? "✓ Email verified" : "✗ Email not verified"}
-                </span>
-                <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  profile.is_phone_verified
-                    ? "bg-success-bg text-success"
-                    : "bg-surface-elevated text-muted-foreground"
-                }`}>
-                  {profile.is_phone_verified ? "✓ Phone verified" : "✗ Phone not verified"}
-                </span>
+            {/* Verification badges — only show if at least one is verified */}
+            {(profile.is_email_verified || profile.is_phone_verified) && (
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h2 className="mb-3 text-sm font-semibold text-foreground">Verification</h2>
+                <div className="flex flex-wrap gap-2">
+                  {profile.is_email_verified && (
+                    <span className="rounded-full bg-success-bg px-3 py-1 text-xs font-medium text-success">
+                      ✓ Email verified
+                    </span>
+                  )}
+                  {profile.is_phone_verified && (
+                    <span className="rounded-full bg-success-bg px-3 py-1 text-xs font-medium text-success">
+                      ✓ Phone verified
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Member since */}
             <p className="text-xs text-muted-foreground">

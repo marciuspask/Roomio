@@ -256,6 +256,12 @@ export interface Listing {
    */
   is_boosted: boolean;
   /**
+   * Photos
+   * List of photo URLs for the listing
+   * @default []
+   */
+  photos: string[];
+  /**
    * Created At
    * When the listing was created
    * @format date-time

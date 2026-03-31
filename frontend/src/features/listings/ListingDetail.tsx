@@ -100,11 +100,32 @@ const ListingDetail = () => {
         <div className="flex flex-col gap-8 lg:flex-row">
           {/* Left content */}
           <div className="flex-1">
-            {/* Photo placeholder */}
+            {/* Photos */}
             <div className="mb-6">
-              <div className="aspect-video w-full overflow-hidden rounded-xl bg-surface-elevated">
-                <div className="h-full w-full bg-gradient-to-br from-primary/10 to-primary/5" />
-              </div>
+              {listing.photos && listing.photos.length > 0 ? (
+                <div className="grid gap-2">
+                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-surface-elevated">
+                    <img
+                      src={listing.photos[0]}
+                      alt={listing.title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  {listing.photos.length > 1 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {listing.photos.slice(1, 4).map((url, i) => (
+                        <div key={i} className="aspect-video overflow-hidden rounded-lg bg-surface-elevated">
+                          <img src={url} alt={`${listing.title} ${i + 2}`} className="h-full w-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="aspect-video w-full overflow-hidden rounded-xl bg-surface-elevated">
+                  <div className="h-full w-full bg-gradient-to-br from-primary/10 to-primary/5" />
+                </div>
+              )}
             </div>
 
             {/* Header */}
@@ -192,14 +213,22 @@ const ListingDetail = () => {
             >
               <h2 className="mb-3 font-heading text-lg font-bold text-foreground">About the poster</h2>
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/20">
-                  <span className="text-lg font-bold text-primary">
-                    {(poster?.display_name ?? listing.city)[0].toUpperCase()}
-                  </span>
-                </div>
+                {poster?.image_url ? (
+                  <img
+                    src={poster.image_url}
+                    alt={poster.display_name || "Anonymous"}
+                    className="h-12 w-12 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                    <span className="text-lg font-bold text-primary">
+                      {(poster?.display_name || "A")[0].toUpperCase()}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <div className="text-sm font-semibold text-foreground">
-                    {poster?.display_name ?? (listing.listing_type === "offering" ? "Room owner" : "Room seeker")}
+                    {poster?.display_name || "Anonymous"}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {poster?.is_phone_verified ? "✓ Phone verified · " : ""}{listing.city}

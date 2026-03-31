@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import Boolean, Date, Float, String, Text
+from sqlalchemy import JSON, Boolean, Date, Float, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from common.database.base_models import Base, TenantAwareModel, TimestampModel
@@ -37,4 +37,7 @@ class ListingORM(Base, TimestampModel, TenantAwareModel):
     )
     is_boosted: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false",
+    )
+    photos: Mapped[list] = mapped_column(
+        JSON, nullable=False, default=list, server_default="[]",
     )
