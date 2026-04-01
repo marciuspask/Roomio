@@ -7,7 +7,7 @@ import FeaturedBadge from "@/features/listings/FeaturedBadge";
 import { useListing, usePublicProfile, useStartConversation } from "@/api/hooks";
 import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Calendar, DollarSign, Home, User, Flag, Lightbulb } from "lucide-react";
+import { MapPin, Calendar, DollarSign, Home, User, Flag, Lightbulb, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ListingDetail = () => {
@@ -23,6 +23,7 @@ const ListingDetail = () => {
   const [messageState, setMessageState] = useState<"idle" | "composing" | "sent">("idle");
   const [messageText, setMessageText] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
   const { mutate: startConversation, isPending: startingConversation } = useStartConversation();
 
   const handleContact = () => {
@@ -103,20 +104,47 @@ const ListingDetail = () => {
             {/* Photos */}
             <div className="mb-6">
               {listing.photos && listing.photos.length > 0 ? (
-                <div className="grid gap-2">
-                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-surface-elevated">
+                <div className="space-y-2">
+                  {/* Main photo */}
+                  <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-surface-elevated">
                     <img
-                      src={listing.photos[0]}
+                      src={listing.photos[photoIndex]}
                       alt={listing.title}
                       className="h-full w-full object-cover"
                     />
+                    {listing.photos.length > 1 && (
+                      <>
+                        <button
+                          onClick={() => setPhotoIndex(i => (i - 1 + listing.photos!.length) % listing.photos!.length)}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-foreground/50 text-white hover:bg-foreground/70 transition-colors"
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+                        <button
+                          onClick={() => setPhotoIndex(i => (i + 1) % listing.photos!.length)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-foreground/50 text-white hover:bg-foreground/70 transition-colors"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                        <span className="absolute bottom-2 right-3 rounded bg-foreground/50 px-2 py-0.5 text-xs text-white">
+                          {photoIndex + 1} / {listing.photos.length}
+                        </span>
+                      </>
+                    )}
                   </div>
+                  {/* Thumbnails */}
                   {listing.photos.length > 1 && (
-                    <div className="grid grid-cols-3 gap-2">
-                      {listing.photos.slice(1, 4).map((url, i) => (
-                        <div key={i} className="aspect-video overflow-hidden rounded-lg bg-surface-elevated">
-                          <img src={url} alt={`${listing.title} ${i + 2}`} className="h-full w-full object-cover" />
-                        </div>
+                    <div className="flex gap-2 overflow-x-auto">
+                      {listing.photos.map((url, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setPhotoIndex(i)}
+                          className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
+                            i === photoIndex ? "border-primary" : "border-transparent"
+                          }`}
+                        >
+                          <img src={url} alt="" className="h-full w-full object-cover" />
+                        </button>
                       ))}
                     </div>
                   )}

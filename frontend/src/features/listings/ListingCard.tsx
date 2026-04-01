@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Listing } from "@/api/generated/data-contracts";
-import { MapPin, Calendar } from "lucide-react";
+import { MapPin, Calendar, User } from "lucide-react";
 import TypeBadge from "./TypeBadge";
 import FeaturedBadge from "./FeaturedBadge";
 
@@ -14,9 +14,17 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
       to={`/listings/${listing.id}`}
       className="group block overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:border-primary/60 hover:-translate-y-0.5 hover:shadow-md"
     >
-      {/* Photo placeholder — no photos in API yet */}
+      {/* Photo / placeholder */}
       <div className="relative aspect-video overflow-hidden bg-surface-elevated">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 transition-transform duration-300 group-hover:scale-105" />
+        {listing.photos?.[0] ? (
+          <img
+            src={listing.photos[0]}
+            alt={listing.title}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 transition-transform duration-300 group-hover:scale-105" />
+        )}
         <div className="absolute left-3 top-3">
           <TypeBadge type={listing.listing_type} />
         </div>
@@ -44,10 +52,22 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
 
       {/* Footer */}
       <div className="flex items-center gap-2 border-t border-border px-4 py-3">
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20">
-          <span className="text-xs font-bold text-primary">{listing.city[0]}</span>
+        <div className="h-6 w-6 shrink-0 overflow-hidden rounded-full bg-primary/20">
+          {listing.poster_image_url ? (
+            <img src={listing.poster_image_url} alt="" className="h-full w-full object-cover" />
+          ) : listing.poster_display_name ? (
+            <span className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-primary">
+              {listing.poster_display_name[0].toUpperCase()}
+            </span>
+          ) : (
+            <span className="flex h-full w-full items-center justify-center">
+              <User size={12} className="text-primary" />
+            </span>
+          )}
         </div>
-        <span className="text-xs font-medium text-foreground">{listing.city}</span>
+        <span className="text-xs text-muted-foreground">
+          {listing.poster_display_name ?? (listing.listing_type === "offering" ? "Room owner" : "Room seeker")}
+        </span>
       </div>
     </Link>
   );

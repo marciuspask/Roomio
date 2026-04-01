@@ -5,14 +5,140 @@ import ListingCard from "@/features/listings/ListingCard";
 import { useListings } from "@/api/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlidersHorizontal, X } from "lucide-react";
+import { DISTRICTS } from "@/lib/districts";
+
+interface FilterPanelProps {
+  draftType: "all" | "offering" | "seeking";
+  setDraftType: (v: "all" | "offering" | "seeking") => void;
+  cities: string[];
+  draftCities: string[];
+  toggleDraftCity: (c: string) => void;
+  priceMinInput: string;
+  setPriceMinInput: (v: string) => void;
+  priceMaxInput: string;
+  setPriceMaxInput: (v: string) => void;
+  availableDistricts: string[];
+  draftDistricts: string[];
+  toggleDraftDistrict: (d: string) => void;
+  applyFilters: () => void;
+  resetFilters: () => void;
+  setMobileFilters: (v: boolean) => void;
+}
+
+const FilterPanel = ({
+  draftType, setDraftType,
+  cities, draftCities, toggleDraftCity,
+  availableDistricts, draftDistricts, toggleDraftDistrict,
+  priceMinInput, setPriceMinInput,
+  priceMaxInput, setPriceMaxInput,
+  applyFilters, resetFilters, setMobileFilters,
+}: FilterPanelProps) => (
+  <div className="space-y-6">
+    <div>
+      <h4 className="mb-2 text-sm font-semibold text-foreground">Type</h4>
+      <div className="flex flex-wrap gap-2">
+        {(["all", "offering", "seeking"] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setDraftType(t)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              draftType === t ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground hover:bg-surface-elevated"
+            }`}
+          >
+            {t === "all" ? "All" : t === "offering" ? "Room offered" : "Looking for room"}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <h4 className="mb-2 text-sm font-semibold text-foreground">City</h4>
+      <div className="max-h-48 space-y-1.5 overflow-y-auto">
+        {cities.map(c => (
+          <label key={c} className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <input
+              type="checkbox"
+              checked={draftCities.includes(c)}
+              onChange={() => toggleDraftCity(c)}
+              className="rounded border-border text-primary focus:ring-primary"
+            />
+            {c}
+          </label>
+        ))}
+      </div>
+    </div>
+
+    {availableDistricts.length > 0 && (
+      <div>
+        <h4 className="mb-2 text-sm font-semibold text-foreground">District</h4>
+        <div className="max-h-48 space-y-1.5 overflow-y-auto">
+          {availableDistricts.map(d => (
+            <label key={d} className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+              <input
+                type="checkbox"
+                checked={draftDistricts.includes(d)}
+                onChange={() => toggleDraftDistrict(d)}
+                className="rounded border-border text-primary focus:ring-primary"
+              />
+              {d}
+            </label>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <div>
+      <h4 className="mb-2 text-sm font-semibold text-foreground">Price range</h4>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          value={priceMinInput}
+          placeholder="Min"
+          onChange={e => setPriceMinInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && applyFilters()}
+          className="w-20 rounded-lg border border-border bg-card px-2 py-1.5 text-sm"
+        />
+        <span className="text-muted-foreground">–</span>
+        <input
+          type="number"
+          value={priceMaxInput}
+          placeholder="Max"
+          onChange={e => setPriceMaxInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && applyFilters()}
+          className="w-20 rounded-lg border border-border bg-card px-2 py-1.5 text-sm"
+        />
+      </div>
+    </div>
+
+    <div className="flex gap-2">
+      <button
+        onClick={() => { applyFilters(); setMobileFilters(false); }}
+        className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+      >
+        Apply
+      </button>
+      <button onClick={resetFilters} className="text-sm text-muted-foreground hover:text-foreground">
+        Reset all
+      </button>
+    </div>
+  </div>
+);
 
 const BrowseListings = () => {
   const { data, isLoading, isError } = useListings();
   const allListings = data?.data ?? [];
 
+  // Applied filter state (drives actual filtering)
   const [typeFilter, setTypeFilter] = useState<"all" | "offering" | "seeking">("all");
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([100, 800]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number | undefined, number | undefined]>([undefined, undefined]);
+  // Draft state (only committed on Apply)
+  const [draftType, setDraftType] = useState<"all" | "offering" | "seeking">("all");
+  const [draftCities, setDraftCities] = useState<string[]>([]);
+  const [draftDistricts, setDraftDistricts] = useState<string[]>([]);
+  const [priceMinInput, setPriceMinInput] = useState("");
+  const [priceMaxInput, setPriceMaxInput] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [mobileFilters, setMobileFilters] = useState(false);
 
@@ -25,7 +151,9 @@ const BrowseListings = () => {
     let results = [...allListings];
     if (typeFilter !== "all") results = results.filter(l => l.listing_type === typeFilter);
     if (selectedCities.length > 0) results = results.filter(l => selectedCities.includes(l.city));
-    results = results.filter(l => l.price >= priceRange[0] && l.price <= priceRange[1]);
+    if (selectedDistricts.length > 0) results = results.filter(l => l.district != null && selectedDistricts.includes(l.district));
+    if (priceRange[0] !== undefined) results = results.filter(l => l.price >= priceRange[0]!);
+    if (priceRange[1] !== undefined) results = results.filter(l => l.price <= priceRange[1]!);
 
     switch (sortBy) {
       case "price-asc": results.sort((a, b) => a.price - b.price); break;
@@ -34,86 +162,53 @@ const BrowseListings = () => {
       default: results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
     return results;
-  }, [allListings, typeFilter, selectedCities, priceRange, sortBy]);
+  }, [allListings, typeFilter, selectedCities, selectedDistricts, priceRange, sortBy]);
 
-  const toggleCity = (c: string) => {
-    setSelectedCities(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+  const availableDistricts = useMemo(() => {
+    const all = draftCities.flatMap(c => DISTRICTS[c] ?? []);
+    return Array.from(new Set(all)).sort();
+  }, [draftCities]);
+
+  const toggleDraftCity = (c: string) => {
+    setDraftCities(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+    // clear district drafts that no longer belong to remaining cities
+    setDraftDistricts([]);
+  };
+
+  const toggleDraftDistrict = (d: string) => {
+    setDraftDistricts(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
+  };
+
+  const applyFilters = () => {
+    setTypeFilter(draftType);
+    setSelectedCities(draftCities);
+    setSelectedDistricts(draftDistricts);
+    setPriceRange([
+      priceMinInput ? +priceMinInput : undefined,
+      priceMaxInput ? +priceMaxInput : undefined,
+    ]);
   };
 
   const resetFilters = () => {
     setTypeFilter("all");
     setSelectedCities([]);
-    setPriceRange([100, 800]);
+    setSelectedDistricts([]);
+    setPriceRange([undefined, undefined]);
+    setDraftType("all");
+    setDraftCities([]);
+    setDraftDistricts([]);
+    setPriceMinInput("");
+    setPriceMaxInput("");
   };
 
-  const FilterPanel = () => (
-    <div className="space-y-6">
-      <div>
-        <h4 className="mb-2 text-sm font-semibold text-foreground">Type</h4>
-        <div className="flex flex-wrap gap-2">
-          {(["all", "offering", "seeking"] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTypeFilter(t)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                typeFilter === t ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground hover:bg-surface-elevated"
-              }`}
-            >
-              {t === "all" ? "All" : t === "offering" ? "Room offered" : "Looking for room"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h4 className="mb-2 text-sm font-semibold text-foreground">City</h4>
-        <div className="max-h-48 space-y-1.5 overflow-y-auto">
-          {cities.map(c => (
-            <label key={c} className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-              <input
-                type="checkbox"
-                checked={selectedCities.includes(c)}
-                onChange={() => toggleCity(c)}
-                className="rounded border-border text-primary focus:ring-primary"
-              />
-              {c}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h4 className="mb-2 text-sm font-semibold text-foreground">Price range</h4>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            value={priceRange[0]}
-            onChange={e => setPriceRange([+e.target.value, priceRange[1]])}
-            className="w-20 rounded-lg border border-border bg-card px-2 py-1.5 text-sm"
-            min={100}
-          />
-          <span className="text-muted-foreground">–</span>
-          <input
-            type="number"
-            value={priceRange[1]}
-            onChange={e => setPriceRange([priceRange[0], +e.target.value])}
-            className="w-20 rounded-lg border border-border bg-card px-2 py-1.5 text-sm"
-            max={800}
-          />
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">€{priceRange[0]} – €{priceRange[1]}</p>
-      </div>
-
-      <div className="flex gap-2">
-        <button onClick={() => setMobileFilters(false)} className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-          Apply
-        </button>
-        <button onClick={resetFilters} className="text-sm text-muted-foreground hover:text-foreground">
-          Reset all
-        </button>
-      </div>
-    </div>
-  );
+  const filterPanelProps: FilterPanelProps = {
+    draftType, setDraftType,
+    cities, draftCities, toggleDraftCity,
+    availableDistricts, draftDistricts, toggleDraftDistrict,
+    priceMinInput, setPriceMinInput,
+    priceMaxInput, setPriceMaxInput,
+    applyFilters, resetFilters, setMobileFilters,
+  };
 
   const renderContent = () => {
     if (isLoading) {
@@ -170,7 +265,7 @@ const BrowseListings = () => {
                 <h3 className="font-heading text-lg font-bold">Filters</h3>
                 <button onClick={() => setMobileFilters(false)}><X size={20} /></button>
               </div>
-              <FilterPanel />
+              <FilterPanel {...filterPanelProps} />
             </div>
           </div>
         )}
@@ -180,7 +275,7 @@ const BrowseListings = () => {
           <aside className="hidden w-[280px] shrink-0 md:block">
             <div className="sticky top-20 rounded-xl border border-border bg-card p-5 shadow-sm">
               <h3 className="mb-4 font-heading text-base font-bold text-foreground">Filters</h3>
-              <FilterPanel />
+              <FilterPanel {...filterPanelProps} />
             </div>
           </aside>
 

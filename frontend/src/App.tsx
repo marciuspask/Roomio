@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ApiAuthProvider from "@/api/components/ApiAuthProvider";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 import AppRoutes from "./routes";
 
 const queryClient = new QueryClient();
@@ -13,6 +14,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <BrowserRouter>
+          <AnnouncementBanner />
           <AppRoutes />
         </BrowserRouter>
       </TooltipProvider>

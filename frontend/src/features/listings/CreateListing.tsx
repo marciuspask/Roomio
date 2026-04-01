@@ -5,12 +5,14 @@ import Nav from "@/components/Nav";
 import StepProgress from "@/components/StepProgress";
 import ListingCard from "@/features/listings/ListingCard";
 import { lithuanianCities } from "@/lib/mockData";
+import { DISTRICTS } from "@/lib/districts";
 import { useCreateListing, useUpdateListing, useListing } from "@/api/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { ListingType, GenderPref, ListingStatus } from "@/api/generated/data-contracts";
 import type { Listing } from "@/api/generated/data-contracts";
-import { Home, Search, Camera } from "lucide-react";
+import { Home, Search } from "lucide-react";
+import PhotoUpload from "@/components/PhotoUpload";
 
 const CreateListing = () => {
   const { isSignedIn } = useAuth();
@@ -35,6 +37,7 @@ const CreateListing = () => {
   const [title, setTitle] = useState("");
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
+  const [districtOther, setDistrictOther] = useState(false);
   const [price, setPrice] = useState("");
   const [utilitiesIncl, setUtilitiesIncl] = useState(false);
 
@@ -56,7 +59,11 @@ const CreateListing = () => {
       setListingType(existing.listing_type);
       setTitle(existing.title);
       setCity(existing.city);
-      setDistrict(existing.district ?? "");
+      const existingDistrict = existing.district ?? "";
+      const predefined = DISTRICTS[existing.city] ?? [];
+      const isOther = existingDistrict !== "" && !predefined.includes(existingDistrict);
+      setDistrict(existingDistrict);
+      setDistrictOther(isOther);
       setPrice(String(existing.price));
       setUtilitiesIncl(existing.utilities_incl);
       setDescription(existing.description);
@@ -64,6 +71,7 @@ const CreateListing = () => {
       setGenderPref(existing.gender_pref);
       setSmoking(existing.allows_smoking);
       setPets(existing.allows_pets);
+      setPhotos(existing.photos ?? []);
     }
   }, [existing]);
 
@@ -99,12 +107,6 @@ const CreateListing = () => {
     );
   }
 
-  const addMockPhoto = () => {
-    if (photos.length >= 6) return;
-    const photoId = Math.floor(Math.random() * 100) + 200;
-    setPhotos([...photos, `https://picsum.photos/seed/${photoId}/800/500`]);
-  };
-
   const previewListing: Listing = {
     id: id ?? "preview",
     tenant_id: "",
@@ -121,6 +123,7 @@ const CreateListing = () => {
     gender_pref: genderPref,
     status: ListingStatus.Active,
     is_boosted: false,
+    photos,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -140,6 +143,7 @@ const CreateListing = () => {
           allows_smoking: smoking,
           allows_pets: pets,
           gender_pref: genderPref,
+          photos,
         });
         toast({ title: "Listing updated!" });
         navigate(`/listings/${id}`);
@@ -157,6 +161,7 @@ const CreateListing = () => {
           allows_pets: pets,
           gender_pref: genderPref,
           status: ListingStatus.Active,
+          photos,
         });
         toast({ title: "Your listing is live!" });
         navigate("/listings");
@@ -199,14 +204,55 @@ const CreateListing = () => {
               onChange={e => setTitle(e.target.value.slice(0, 80))}
               className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
             <p className="text-right text-xs text-muted-foreground">{title.length}/80</p>
-            <select value={city} onChange={e => setCity(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary">
+            <select
+              value={city}
+              onChange={e => { setCity(e.target.value); setDistrict(""); setDistrictOther(false); }}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+            >
               <option value="">Select city</option>
               {lithuanianCities.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <input type="text" placeholder="Neighbourhood / district (optional)" value={district}
-              onChange={e => setDistrict(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
+            {DISTRICTS[city] ? (
+              districtOther ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Type district / neighbourhood"
+                    value={district}
+                    onChange={e => setDistrict(e.target.value)}
+                    className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setDistrictOther(false); setDistrict(""); }}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    ← Back
+                  </button>
+                </div>
+              ) : (
+                <select
+                  value={district}
+                  onChange={e => {
+                    if (e.target.value === "other") { setDistrictOther(true); setDistrict(""); }
+                    else setDistrict(e.target.value);
+                  }}
+                  className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">District / neighbourhood (optional)</option>
+                  {DISTRICTS[city].map(d => <option key={d} value={d}>{d}</option>)}
+                  <option value="other">Other (type manually)</option>
+                </select>
+              )
+            ) : (
+              <input
+                type="text"
+                placeholder="Neighbourhood / district (optional)"
+                value={district}
+                onChange={e => setDistrict(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+            )}
             <div className="flex items-center gap-2">
               <input type="number" placeholder="Price" value={price} onChange={e => setPrice(e.target.value)}
                 className="w-32 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
@@ -270,26 +316,7 @@ const CreateListing = () => {
         {step === 2 && (
           <div className="space-y-5">
             <h2 className="font-heading text-xl font-bold text-foreground">Photos</h2>
-            <p className="text-sm text-muted-foreground">Photo uploads are coming soon. You can skip this step.</p>
-            <button onClick={addMockPhoto}
-              className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border py-12 text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-              <Camera size={32} className="mb-2" />
-              <p className="text-sm font-medium">Drop photos here or click to upload</p>
-              <p className="text-xs">Up to 6 total · JPG, PNG, WebP</p>
-            </button>
-            {photos.length > 0 && (
-              <div className="grid grid-cols-3 gap-3">
-                {photos.map((p, i) => (
-                  <div key={i} className="relative">
-                    <img src={p} alt="" className="aspect-video w-full rounded-lg object-cover" />
-                    {i === 0 && <span className="absolute left-2 top-2 rounded bg-foreground/60 px-1.5 py-0.5 text-[10px] text-primary-foreground">Cover</span>}
-                    <button onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
-                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-foreground/60 text-xs text-primary-foreground">×</button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground">{photos.length} / 6 photos</p>
+            <PhotoUpload value={photos} onChange={setPhotos} max={5} />
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground">← Back</button>
               <button onClick={() => setStep(3)}

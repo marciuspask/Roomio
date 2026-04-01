@@ -260,7 +260,17 @@ export interface Listing {
    * List of photo URLs for the listing
    * @default []
    */
-  photos: string[];
+  photos?: string[];
+  /**
+   * Poster Display Name
+   * Poster's display name
+   */
+  poster_display_name?: string | null;
+  /**
+   * Poster Image Url
+   * Poster's profile photo URL
+   */
+  poster_image_url?: string | null;
   /**
    * Created At
    * When the listing was created
@@ -338,6 +348,12 @@ export interface ListingCreate {
    * @default "draft"
    */
   status?: ListingStatus;
+  /**
+   * Photos
+   * List of photo URLs for the listing
+   * @default []
+   */
+  photos?: string[];
 }
 
 /** ListingResponse */
@@ -399,6 +415,11 @@ export interface ListingUpdate {
   gender_pref?: GenderPref | null;
   /** Current listing status */
   status?: ListingStatus | null;
+  /**
+   * Photos
+   * List of photo URLs for the listing
+   */
+  photos?: string[] | null;
 }
 
 /** ListingsResponse */

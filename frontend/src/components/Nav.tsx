@@ -30,7 +30,7 @@ const Nav = () => {
               <Link to="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 Dashboard
               </Link>
-              <UserButton />
+              <UserButton userProfileUrl="/dashboard/profile" userProfileMode="navigation" />
               <button
                 onClick={() => navigate("/listings/create")}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark transition-colors"

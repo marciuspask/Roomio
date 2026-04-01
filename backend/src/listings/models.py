@@ -41,6 +41,8 @@ class Listing(BaseModel):
     status: ListingStatus = Field(description="Current listing status")
     is_boosted: bool = Field(description="Whether the listing is boosted for higher visibility")
     photos: list[str] = Field(default=[], description="List of photo URLs for the listing")
+    poster_display_name: str | None = Field(default=None, description="Poster's display name")
+    poster_image_url: str | None = Field(default=None, description="Poster's profile photo URL")
     created_at: datetime = Field(description="When the listing was created")
     updated_at: datetime = Field(description="When the listing was last updated")
 
@@ -62,6 +64,7 @@ class ListingCreate(BaseModel):
     status: ListingStatus = Field(
         default=ListingStatus.DRAFT, description="Initial listing status",
     )
+    photos: list[str] = Field(default=[], description="List of photo URLs for the listing")
 
 
 class ListingUpdate(BaseModel):
@@ -83,6 +86,7 @@ class ListingUpdate(BaseModel):
         default=None, description="Preferred gender of the tenant",
     )
     status: ListingStatus | None = Field(default=None, description="Current listing status")
+    photos: list[str] | None = Field(default=None, description="List of photo URLs for the listing")
 
 
 class ListingResponse(BaseModel):
