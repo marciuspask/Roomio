@@ -8,6 +8,7 @@ from listings.service import ListingsService
 from messages.service import MessagesService
 from models import AuthMethod, TenantContext, TenantType, UserRole
 from profile.service import ProfileService
+from saved.service import SavedListingsService
 from settings.service import SettingsService
 
 TenantDep = Annotated[TenantContext, Depends(get_tenant_context_from_header)]
@@ -76,3 +77,14 @@ def get_messages_service(request: Request, tenant: TenantDep) -> MessagesService
 
 
 MessagesServiceDep = Annotated[MessagesService, Depends(get_messages_service)]
+
+
+# -- Saved listings -----------------------------------------------------------
+
+def get_saved_listings_service(request: Request, tenant: TenantDep) -> SavedListingsService:
+    session_maker = request.app.state.session_maker
+    uow_factory = UnitOfWorkFactory(session_maker)
+    return SavedListingsService(uow_factory=uow_factory, tenant_context=tenant)
+
+
+SavedListingsServiceDep = Annotated[SavedListingsService, Depends(get_saved_listings_service)]

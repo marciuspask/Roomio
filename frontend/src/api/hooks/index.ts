@@ -12,3 +12,4 @@ export { useConversationMessages } from "./useConversationMessages";
 export { useSendMessage } from "./useSendMessage";
 export { useStartConversation } from "./useStartConversation";
 export { useMarkAsRead } from "./useMarkAsRead";
+export { useSavedListings, useSaveListing, useUnsaveListing } from "./useSavedListings";

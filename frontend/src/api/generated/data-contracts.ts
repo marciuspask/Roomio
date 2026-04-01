@@ -630,6 +630,15 @@ export interface ProfileUpdate {
   image_url?: string | null;
 }
 
+/** SavedListingsResponse */
+export interface SavedListingsResponse {
+  /**
+   * Data
+   * List of saved listing IDs
+   */
+  data: string[];
+}
+
 /** Settings */
 export interface Settings {
   /**

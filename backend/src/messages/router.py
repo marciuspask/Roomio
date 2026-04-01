@@ -1,5 +1,5 @@
 import structlog
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from di import MessagesServiceDep
 from messages.models import (
@@ -45,7 +45,7 @@ async def get_messages(
 
 @router.post(
     "/api/v1/conversations/{conversation_id}/read",
-    status_code=204,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def mark_as_read(
     conversation_id: str,
@@ -57,7 +57,7 @@ async def mark_as_read(
 @router.post(
     "/api/v1/conversations/{conversation_id}/messages",
     response_model=MessageResponse,
-    status_code=201,
+    status_code=status.HTTP_201_CREATED,
 )
 async def send_message(
     conversation_id: str,
@@ -71,7 +71,7 @@ async def send_message(
 @listings_router.post(
     "/{listing_id}/message",
     response_model=ConversationResponse,
-    status_code=201,
+    status_code=status.HTTP_201_CREATED,
 )
 async def start_conversation(
     listing_id: str,

@@ -7,8 +7,9 @@ import FeaturedBadge from "@/features/listings/FeaturedBadge";
 import { useListing, usePublicProfile, useStartConversation } from "@/api/hooks";
 import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Calendar, DollarSign, Home, User, Flag, Lightbulb, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, Calendar, DollarSign, Home, User, Flag, Lightbulb, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSavedListings, useSaveListing, useUnsaveListing } from "@/api/hooks";
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -25,10 +26,22 @@ const ListingDetail = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   const { mutate: startConversation, isPending: startingConversation } = useStartConversation();
+  const { data: savedData } = useSavedListings();
+  const savedIds = savedData?.data ?? [];
+  const isSaved = id ? savedIds.includes(id) : false;
+  const { mutate: saveListing, isPending: saving } = useSaveListing();
+  const { mutate: unsaveListing, isPending: unsaving } = useUnsaveListing();
 
   const handleContact = () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
     setMessageState("composing");
+  };
+
+  const handleToggleSave = () => {
+    if (!isLoggedIn) { setShowAuthModal(true); return; }
+    if (!id) return;
+    if (isSaved) unsaveListing(id);
+    else saveListing(id);
   };
 
   const handleSend = () => {
@@ -308,6 +321,15 @@ const ListingDetail = () => {
               )}
 
               <div className="my-4 border-t border-border" />
+
+              <button
+                onClick={handleToggleSave}
+                disabled={saving || unsaving}
+                className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors disabled:opacity-50"
+              >
+                <Heart size={16} className={isSaved ? "fill-primary text-primary" : ""} />
+                {isSaved ? "Saved" : "Save listing"}
+              </button>
 
               <button
                 onClick={() => toast({ title: "Thanks for reporting", description: "We'll review this listing." })}

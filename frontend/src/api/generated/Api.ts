@@ -25,6 +25,7 @@ import {
   MessagesResponse,
   ProfileResponse,
   ProfileUpdate,
+  SavedListingsResponse,
   SettingsResponse,
   SettingsUpdate,
 } from "./data-contracts";
@@ -365,6 +366,56 @@ export class Api<
       body: data,
       type: ContentType.Json,
       format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags saved
+   * @name GetSavedListingsApiV1SavedGet
+   * @summary Get Saved Listings
+   * @request GET:/api/v1/saved/
+   */
+  getSavedListingsApiV1SavedGet = (params: RequestParams = {}) =>
+    this.request<SavedListingsResponse, HTTPValidationError>({
+      path: `/api/v1/saved/`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags saved
+   * @name SaveListingApiV1SavedListingIdPost
+   * @summary Save Listing
+   * @request POST:/api/v1/saved/{listing_id}
+   */
+  saveListingApiV1SavedListingIdPost = (
+    listingId: string,
+    params: RequestParams = {},
+  ) =>
+    this.request<any, HTTPValidationError>({
+      path: `/api/v1/saved/${listingId}`,
+      method: "POST",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags saved
+   * @name UnsaveListingApiV1SavedListingIdDelete
+   * @summary Unsave Listing
+   * @request DELETE:/api/v1/saved/{listing_id}
+   */
+  unsaveListingApiV1SavedListingIdDelete = (
+    listingId: string,
+    params: RequestParams = {},
+  ) =>
+    this.request<void, HTTPValidationError>({
+      path: `/api/v1/saved/${listingId}`,
+      method: "DELETE",
       ...params,
     });
 }

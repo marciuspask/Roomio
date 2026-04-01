@@ -4,11 +4,13 @@ import { useUser, useAuth, useClerk } from "@clerk/react";
 import {
   useMyListings, useDeleteListing, useProfile, useUpdateProfile,
   useConversations, useConversationMessages, useSendMessage, usePublicProfile, useMarkAsRead,
+  useSavedListings, useListings,
 } from "@/api/hooks";
+import ListingCard from "@/features/listings/ListingCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Occupation } from "@/api/generated/data-contracts";
 import { useToast } from "@/hooks/use-toast";
-import { Home, LayoutList, MessageSquare, User, Plus, Zap, ArrowLeft, Trash2 } from "lucide-react";
+import { Home, LayoutList, MessageSquare, User, Plus, Zap, ArrowLeft, Trash2, Heart } from "lucide-react";
 
 const formatMessageTime = (isoString: string) => {
   const diff = Date.now() - new Date(isoString).getTime();
@@ -49,7 +51,7 @@ const Dashboard = () => {
   const { toast } = useToast();
 
   const path = location.pathname;
-  const activeTab = path.includes("/messages") ? "messages" : path.includes("/listings") ? "listings" : path.includes("/profile") ? "profile" : "overview";
+  const activeTab = path.includes("/messages") ? "messages" : path.includes("/saved") ? "saved" : path.includes("/listings") ? "listings" : path.includes("/profile") ? "profile" : "overview";
 
   const { data: myListingsData, isLoading: listingsLoading, isError: listingsError } = useMyListings();
   const myListings = myListingsData?.data ?? [];
@@ -60,6 +62,10 @@ const Dashboard = () => {
   const { mutate: saveProfile, isPending: savingProfile } = useUpdateProfile();
 
   const { data: conversationsData, isLoading: convsLoading } = useConversations();
+  const { data: savedData, isLoading: savedLoading } = useSavedListings();
+  const savedIds = savedData?.data ?? [];
+  const { data: allListingsData } = useListings();
+  const savedListings = (allListingsData?.data ?? []).filter(l => savedIds.includes(l.id));
   const conversations = conversationsData?.data ?? [];
 
   const [fullName, setFullName] = useState("");
@@ -108,6 +114,7 @@ const Dashboard = () => {
   const navItems = [
     { id: "overview", label: "Overview", icon: Home, path: "/dashboard" },
     { id: "listings", label: "My Listings", icon: LayoutList, path: "/dashboard/listings" },
+    { id: "saved", label: "Saved", icon: Heart, path: "/dashboard/saved" },
     { id: "messages", label: "Messages", icon: MessageSquare, path: "/dashboard/messages", badge: totalUnread || undefined },
     { id: "profile", label: "My Profile", icon: User, path: "/dashboard/profile" },
   ];
@@ -387,6 +394,40 @@ const Dashboard = () => {
                         <Trash2 size={12} className="mr-1 inline" />Delete
                       </button>
                     </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* SAVED LISTINGS */}
+          {activeTab === "saved" && (
+            <>
+              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">Saved Listings</h1>
+              {savedLoading ? (
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-64 rounded-xl" />
+                  ))}
+                </div>
+              ) : savedListings.length === 0 ? (
+                <div className="py-16 text-center">
+                  <Heart size={48} className="mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="mb-2 font-heading text-lg font-bold">No saved listings yet</h3>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    Tap the heart on any listing to save it here.
+                  </p>
+                  <Link
+                    to="/listings"
+                    className="inline-block rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground"
+                  >
+                    Browse listings →
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {savedListings.map(l => (
+                    <ListingCard key={l.id} listing={l} />
                   ))}
                 </div>
               )}

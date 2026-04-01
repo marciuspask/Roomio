@@ -11,6 +11,7 @@ from pydantic import ValidationError
 import listings.database.orm_models  # noqa: F401 — registers ListingORM with Base.metadata
 import messages.database.orm_models  # noqa: F401 — registers ConversationORM/MessageORM with Base.metadata
 import profile.database.orm_models  # noqa: F401 — registers ProfileORM with Base.metadata
+import saved.database.orm_models  # noqa: F401 — registers SavedListingORM with Base.metadata
 import settings.database.orm_models  # noqa: F401 — registers SettingsORM with Base.metadata
 from auth.dependencies import TenantResolver
 from common.database.connection import DatabaseConnection
@@ -30,6 +31,7 @@ from profile.router import router as profile_router
 from profile.router import users_router
 from routes.health import router as health_router
 from routes.me import router as me_router
+from saved.router import router as saved_router
 from settings.router import router as settings_router
 
 logger = structlog.get_logger(__name__)
@@ -105,6 +107,7 @@ def create_app() -> FastAPI:
     app.include_router(listings_router)
     app.include_router(messages_router)
     app.include_router(message_listings_router)
+    app.include_router(saved_router)
 
     return app
 

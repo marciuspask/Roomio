@@ -1,8 +1,48 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Listing } from "@/api/generated/data-contracts";
-import { MapPin, Calendar, User } from "lucide-react";
+import { MapPin, Calendar, User, Heart } from "lucide-react";
+import { useAuth } from "@clerk/react";
+import { useSavedListings, useSaveListing, useUnsaveListing } from "@/api/hooks";
 import TypeBadge from "./TypeBadge";
 import FeaturedBadge from "./FeaturedBadge";
+
+const SaveButton = ({ listingId }: { listingId: string }) => {
+  const { isSignedIn } = useAuth();
+  const navigate = useNavigate();
+  const { data } = useSavedListings();
+  const savedIds = data?.data ?? [];
+  const isSaved = savedIds.includes(listingId);
+  const { mutate: save, isPending: saving } = useSaveListing();
+  const { mutate: unsave, isPending: unsaving } = useUnsaveListing();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isSignedIn) {
+      navigate("/login");
+      return;
+    }
+    if (isSaved) {
+      unsave(listingId);
+    } else {
+      save(listingId);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={saving || unsaving}
+      aria-label={isSaved ? "Unsave listing" : "Save listing"}
+      className="flex h-7 w-7 items-center justify-center rounded-full bg-card/80 backdrop-blur-sm shadow-sm transition-colors hover:bg-card disabled:opacity-60"
+    >
+      <Heart
+        size={14}
+        className={isSaved ? "fill-primary text-primary" : "text-foreground"}
+      />
+    </button>
+  );
+};
 
 const ListingCard = ({ listing }: { listing: Listing }) => {
   const dateStr = new Date(listing.available_from).toLocaleDateString("en-GB", {
@@ -28,11 +68,10 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
         <div className="absolute left-3 top-3">
           <TypeBadge type={listing.listing_type} />
         </div>
-        {listing.is_boosted && (
-          <div className="absolute right-3 top-3">
-            <FeaturedBadge />
-          </div>
-        )}
+        <div className="absolute right-3 top-3 flex flex-col items-end gap-1">
+          <SaveButton listingId={listing.id} />
+          {listing.is_boosted && <FeaturedBadge />}
+        </div>
       </div>
 
       {/* Body */}

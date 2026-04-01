@@ -40,7 +40,7 @@ class ListingsRepository(TenantRepository[ListingORM, Listing]):
         if not listings:
             return listings
 
-        tenant_ids = list({l.tenant_id for l in listings})
+        tenant_ids = list({listing.tenant_id for listing in listings})
         profiles_result = await self.session.execute(
             select(ProfileORM).where(ProfileORM.tenant_id.in_(tenant_ids)),
         )
