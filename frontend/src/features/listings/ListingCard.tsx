@@ -52,7 +52,7 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
   return (
     <Link
       to={`/listings/${listing.id}`}
-      className="group block overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:border-primary/60 hover:-translate-y-0.5 hover:shadow-md"
+      className="group block overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-[transform,box-shadow,border-color] duration-200 ease-ui hover:border-primary/60 hover:-translate-y-0.5 hover:shadow-md"
     >
       {/* Photo / placeholder */}
       <div className="relative aspect-video overflow-hidden bg-surface-elevated">

@@ -1,7 +1,12 @@
-import structlog
-from fastapi import APIRouter, status
+import json
 
+import structlog
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
+
+from auth.dependencies import AuthError, TenantResolver
+from common.database.unit_of_work import UnitOfWorkFactory
 from di import MessagesServiceDep
+from messages.errors import MessageError
 from messages.models import (
     ConversationResponse,
     ConversationsResponse,
@@ -9,6 +14,8 @@ from messages.models import (
     MessageResponse,
     MessagesResponse,
 )
+from messages.service import MessagesService
+from messages.websocket import ConnectionManager
 
 logger = structlog.get_logger(__name__)
 
@@ -80,3 +87,45 @@ async def start_conversation(
 ) -> ConversationResponse:
     result = await service.start_conversation(listing_id, body.body)
     return ConversationResponse(data=result)
+
+
+@router.websocket("/api/v1/ws/conversations/{conversation_id}")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    conversation_id: str,
+    token: str = Query(...),
+) -> None:
+    resolver: TenantResolver = websocket.app.state.tenant_resolver  # type: ignore[attr-defined]
+    try:
+        tenant = resolver.get_tenant_context(f"Bearer {token}")
+    except AuthError:
+        await websocket.close(code=4001)
+        return
+
+    manager: ConnectionManager = websocket.app.state.ws_manager  # type: ignore[attr-defined]
+    session_maker = websocket.app.state.session_maker  # type: ignore[attr-defined]
+    uow_factory = UnitOfWorkFactory(session_maker)
+    service = MessagesService(uow_factory=uow_factory, tenant_context=tenant)
+
+    try:
+        await service.get_conversation(conversation_id)
+    except (MessageError, Exception):
+        await websocket.close(code=4004)
+        return
+
+    await manager.connect(websocket, conversation_id)
+
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            try:
+                payload = json.loads(raw)
+                body = str(payload.get("body", "")).strip()
+                if not body:
+                    continue
+                msg = await service.send_message(conversation_id, body)
+                await manager.broadcast(msg.model_dump_json(), conversation_id)
+            except (MessageError, ValueError, KeyError) as exc:
+                logger.warning("ws_message_error", error=str(exc))
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, conversation_id)

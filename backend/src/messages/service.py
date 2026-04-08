@@ -6,6 +6,7 @@ from messages.database.unit_of_work import MessagesUnitOfWork
 from messages.errors import MessageError
 from messages.models import Conversation, Message
 from models import AuthMethod, TenantContext, TenantType, UserRole
+from profile.database.unit_of_work import ProfileUnitOfWork
 
 logger = structlog.get_logger(__name__)
 
@@ -36,6 +37,41 @@ class MessagesService:
     def _listing_uow(self):
         return self._uow_factory.create(ListingsUnitOfWork, _ANON_CONTEXT)
 
+    def _profile_uow(self):
+        return self._uow_factory.create(ProfileUnitOfWork, _ANON_CONTEXT)
+
+    async def _enrich_conversations(self, conversations: list[Conversation]) -> list[Conversation]:
+        if not conversations:
+            return conversations
+
+        all_participant_ids = list({pid for c in conversations for pid in c.participant_ids})
+        listing_ids = list({c.listing_id for c in conversations})
+
+        async with self._profile_uow() as uow:
+            profiles = await uow.profile.get_by_tenant_ids_bulk(all_participant_ids)
+        profiles_map = {p.tenant_id: p for p in profiles}
+
+        async with self._listing_uow() as uow:
+            titles_map = await uow.listings.get_titles_bulk(listing_ids)
+
+        enriched = []
+        for conv in conversations:
+            display_names: dict[str, str] = {}
+            ages: dict[str, int | None] = {}
+            image_urls: dict[str, str | None] = {}
+            for pid in conv.participant_ids:
+                p = profiles_map.get(pid)
+                display_names[pid] = p.display_name if p else f"User \u2026{pid[-6:]}"
+                ages[pid] = p.age if p else None
+                image_urls[pid] = p.image_url if p else None
+            enriched.append(conv.model_copy(update={
+                "listing_title": titles_map.get(conv.listing_id),
+                "participant_display_names": display_names,
+                "participant_ages": ages,
+                "participant_image_urls": image_urls,
+            }))
+        return enriched
+
     def _is_participant(self, conversation: Conversation) -> bool:
         return self._tenant_context.tenant_id in conversation.participant_ids
 
@@ -46,13 +82,14 @@ class MessagesService:
             conv_ids = [c.id for c in conversations]
             last_messages = await uow.messages.get_last_messages_bulk(conv_ids)
             unread_counts = await uow.messages.get_unread_counts_bulk(conv_ids, tenant_id)
-        return [
+        base = [
             conv.model_copy(update={
                 "last_message": last_messages.get(conv.id),
                 "unread_count": unread_counts.get(conv.id, 0),
             })
             for conv in conversations
         ]
+        return await self._enrich_conversations(base)
 
     async def get_conversation(self, conversation_id: str) -> Conversation:
         async with self._uow() as uow:
@@ -62,7 +99,9 @@ class MessagesService:
             if not self._is_participant(conv):
                 raise MessageError.forbidden(conversation_id)
             last_msg = await uow.messages.get_last_message(conv.id)
-        return conv.model_copy(update={"last_message": last_msg})
+        base = conv.model_copy(update={"last_message": last_msg})
+        enriched = await self._enrich_conversations([base])
+        return enriched[0]
 
     async def get_messages(self, conversation_id: str) -> list[Message]:
         async with self._uow() as uow:

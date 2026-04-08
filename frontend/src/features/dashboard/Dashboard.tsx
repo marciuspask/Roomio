@@ -3,9 +3,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser, useAuth, useClerk } from "@clerk/react";
 import {
   useMyListings, useDeleteListing, useProfile, useUpdateProfile,
-  useConversations, useConversationMessages, useSendMessage, usePublicProfile, useMarkAsRead,
+  useConversations, useConversationMessages, useSendMessage, useMarkAsRead,
   useSavedListings, useListings,
 } from "@/api/hooks";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import type { Conversation } from "@/api/generated/data-contracts";
 import ListingCard from "@/features/listings/ListingCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Occupation } from "@/api/generated/data-contracts";
@@ -26,20 +28,13 @@ const formatMessageTime = (isoString: string) => {
     { day: "numeric", month: "short", year: "numeric" });
 };
 
-const ParticipantInfo = ({
-  participantIds,
-  currentUserId,
-  children,
-}: {
-  participantIds: string[];
-  currentUserId: string | null | undefined;
-  children: (info: { displayName: string; avatarUrl: string | null }) => React.ReactNode;
-}) => {
-  const otherId = participantIds.find(id => id !== currentUserId) ?? "";
-  const { data } = usePublicProfile(otherId);
-  const displayName = data?.data.display_name ?? `User …${otherId.slice(-6)}`;
-  const avatarUrl = data?.data.image_url ?? null;
-  return <>{children({ displayName, avatarUrl })}</>;
+const getParticipantInfo = (conv: Conversation, currentUserId: string | null | undefined) => {
+  const otherId = conv.participant_ids.find(id => id !== currentUserId) ?? "";
+  const rawName = conv.participant_display_names?.[otherId] ?? `User …${otherId.slice(-6)}`;
+  const age = conv.participant_ages?.[otherId] ?? null;
+  const displayName = age != null ? `${rawName}, ${age}` : rawName;
+  const avatarUrl = conv.participant_image_urls?.[otherId] ?? null;
+  return { displayName, avatarUrl };
 };
 
 const Dashboard = () => {
@@ -91,6 +86,9 @@ const Dashboard = () => {
   const { data: messagesData, isLoading: messagesLoading } = useConversationMessages(selectedConvo ?? "");
   const messages = messagesData?.data ?? [];
   const { mutate: sendMessage, isPending: sending } = useSendMessage();
+  const { isConnected: wsConnected, sendMessage: wsSendMessage } = useWebSocket(
+    activeTab === "messages" ? selectedConvo : null,
+  );
   const { mutate: markAsRead } = useMarkAsRead();
 
   useEffect(() => {
@@ -121,10 +119,15 @@ const Dashboard = () => {
 
   const handleSendMessage = (convoId: string) => {
     if (!newMsg.trim()) return;
-    sendMessage(
-      { conversationId: convoId, body: newMsg },
-      { onSuccess: () => setNewMsg("") },
-    );
+    const sentViaWs = wsSendMessage(newMsg);
+    if (sentViaWs) {
+      setNewMsg("");
+    } else {
+      sendMessage(
+        { conversationId: convoId, body: newMsg },
+        { onSuccess: () => setNewMsg("") },
+      );
+    }
   };
 
   const handleBoost = (id: string) => {
@@ -307,26 +310,25 @@ const Dashboard = () => {
                   <p className="text-sm text-muted-foreground">No messages yet.</p>
                 ) : (
                   <div className="space-y-2">
-                    {conversations.slice(0, 3).map(c => (
-                      <Link key={c.id} to="/dashboard/messages"
-                        className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm hover:border-primary transition-colors">
-                        <ParticipantInfo participantIds={c.participant_ids} currentUserId={clerkUserId}>
-                          {({ displayName, avatarUrl }) => (
-                            <>
-                              <div className="h-10 w-10 shrink-0 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center">
-                                {avatarUrl
-                                  ? <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
-                                  : <User size={16} className="text-primary" />}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground">{displayName}</p>
-                                <p className="truncate text-xs text-muted-foreground">{c.last_message?.body ?? "No messages yet"}</p>
-                              </div>
-                            </>
-                          )}
-                        </ParticipantInfo>
-                      </Link>
-                    ))}
+                    {conversations.slice(0, 3).map(c => {
+                      const { displayName, avatarUrl } = getParticipantInfo(c, clerkUserId);
+                      return (
+                        <Link key={c.id} to="/dashboard/messages"
+                          className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm hover:border-primary transition-colors">
+                          <div className="h-10 w-10 shrink-0 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center">
+                            {avatarUrl
+                              ? <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                              : <User size={16} className="text-primary" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground">{displayName}</p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {c.listing_title ? `Re: ${c.listing_title}` : "No messages yet"}
+                            </p>
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -451,41 +453,38 @@ const Dashboard = () => {
                 ) : conversations.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">No conversations yet.</p>
                 ) : (
-                  conversations.map(c => (
-                    <button key={c.id} onClick={() => setSelectedConvo(c.id)}
-                      className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
-                        selectedConvo === c.id
-                          ? "border-l-2 border-primary bg-primary-light"
-                          : c.unread_count > 0
-                            ? "bg-primary/5 hover:bg-primary/10"
-                            : "hover:bg-surface-elevated"
-                      }`}>
-                      <ParticipantInfo participantIds={c.participant_ids} currentUserId={clerkUserId}>
-                        {({ displayName, avatarUrl }) => (
-                          <>
-                            <div className="h-10 w-10 shrink-0 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center">
-                              {avatarUrl
-                                ? <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
-                                : <User size={16} className="text-primary" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <span className={`text-sm text-foreground ${c.unread_count > 0 ? "font-semibold" : "font-medium"}`}>
-                                  {displayName}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground">
-                                  {new Date(c.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                                </span>
-                              </div>
-                              <p className={`truncate text-xs text-muted-foreground ${c.unread_count > 0 ? "font-semibold" : ""}`}>
-                                {c.last_message?.body ?? "No messages yet"}
-                              </p>
-                            </div>
-                          </>
-                        )}
-                      </ParticipantInfo>
-                    </button>
-                  ))
+                  conversations.map(c => {
+                    const { displayName, avatarUrl } = getParticipantInfo(c, clerkUserId);
+                    return (
+                      <button key={c.id} onClick={() => setSelectedConvo(c.id)}
+                        className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
+                          selectedConvo === c.id
+                            ? "border-l-2 border-primary bg-primary-light"
+                            : c.unread_count > 0
+                              ? "bg-primary/5 hover:bg-primary/10"
+                              : "hover:bg-surface-elevated"
+                        }`}>
+                        <div className="h-10 w-10 shrink-0 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center">
+                          {avatarUrl
+                            ? <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                            : <User size={16} className="text-primary" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-sm text-foreground ${c.unread_count > 0 ? "font-semibold" : "font-medium"}`}>
+                              {displayName}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(c.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                            </span>
+                          </div>
+                          <p className={`truncate text-xs text-muted-foreground ${c.unread_count > 0 ? "font-medium" : ""}`}>
+                            {c.listing_title ? `Re: ${c.listing_title}` : "No messages yet"}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })
                 )}
               </div>
 
@@ -494,23 +493,34 @@ const Dashboard = () => {
                 <div className={`${selectedConvo ? "flex" : "hidden md:flex"} flex-1 flex-col rounded-xl border border-border bg-card`}>
                   <div className="flex items-center gap-3 border-b border-border p-4">
                     <button onClick={() => setSelectedConvo(null)} className="md:hidden"><ArrowLeft size={18} /></button>
-                    <ParticipantInfo participantIds={selectedConversation.participant_ids} currentUserId={clerkUserId}>
-                      {({ displayName, avatarUrl }) => (
+                    {(() => {
+                      const { displayName, avatarUrl } = getParticipantInfo(selectedConversation, clerkUserId);
+                      return (
                         <>
                           <div className="h-8 w-8 shrink-0 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center">
                             {avatarUrl
                               ? <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
                               : <User size={14} className="text-primary" />}
                           </div>
-                          <div>
+                          <div className="flex-1 min-w-0">
                             <span className="text-sm font-medium text-foreground">{displayName}</span>
                             <p className="text-xs text-muted-foreground">
-                              <Link to={`/listings/${selectedConversation.listing_id}`} className="hover:text-primary">View listing →</Link>
+                              <Link to={`/listings/${selectedConversation.listing_id}`} className="hover:text-primary">
+                                {selectedConversation.listing_title
+                                  ? `View listing → ${selectedConversation.listing_title}`
+                                  : "View listing →"}
+                              </Link>
                             </p>
                           </div>
+                          {wsConnected && (
+                            <span className="flex items-center gap-1 text-[10px] font-medium text-success">
+                              <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                              Live
+                            </span>
+                          )}
                         </>
-                      )}
-                    </ParticipantInfo>
+                      );
+                    })()}
                   </div>
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {messagesLoading ? (
@@ -548,7 +558,7 @@ const Dashboard = () => {
                       disabled={sending}
                       className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
                     >
-                      {sending ? "…" : "Send"}
+                      {sending && !wsConnected ? "…" : "Send"}
                     </button>
                   </div>
                 </div>

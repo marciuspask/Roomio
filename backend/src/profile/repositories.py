@@ -50,6 +50,14 @@ class ProfileRepository(TenantRepository[ProfileORM, Profile]):
             return None
         return self.to_model(entity)
 
+    async def get_by_tenant_ids_bulk(self, tenant_ids: list[str]) -> list[Profile]:
+        """Get profiles for multiple tenant IDs in one query."""
+        if not tenant_ids:
+            return []
+        stmt = select(ProfileORM).where(ProfileORM.tenant_id.in_(tenant_ids))
+        result = await self.session.execute(stmt)
+        return self.to_model_list(list(result.scalars().all()))
+
     async def update_profile(
         self,
         profile_id: str,

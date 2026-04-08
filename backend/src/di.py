@@ -6,6 +6,7 @@ from auth.dependencies import get_tenant_context_from_header, require_admin
 from common.database.unit_of_work import UnitOfWorkFactory
 from listings.service import ListingsService
 from messages.service import MessagesService
+from messages.websocket import ConnectionManager
 from models import AuthMethod, TenantContext, TenantType, UserRole
 from profile.service import ProfileService
 from saved.service import SavedListingsService
@@ -68,6 +69,15 @@ ListingsServiceDep = Annotated[ListingsService, Depends(get_listings_service)]
 PublicListingsServiceDep = Annotated[ListingsService, Depends(get_public_listings_service)]
 
 
+# -- WebSocket connection manager ---------------------------------------------
+
+def get_connection_manager(request: Request) -> ConnectionManager:
+    return request.app.state.ws_manager  # type: ignore[no-any-return]
+
+
+ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
+
+
 # -- Messages -----------------------------------------------------------------
 
 def get_messages_service(request: Request, tenant: TenantDep) -> MessagesService:
@@ -88,3 +98,4 @@ def get_saved_listings_service(request: Request, tenant: TenantDep) -> SavedList
 
 
 SavedListingsServiceDep = Annotated[SavedListingsService, Depends(get_saved_listings_service)]
+

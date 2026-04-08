@@ -27,6 +27,7 @@ from listings.router import router as listings_router
 from logging_config import configure_logging
 from messages.router import listings_router as message_listings_router
 from messages.router import router as messages_router
+from messages.websocket import ConnectionManager
 from profile.router import router as profile_router
 from profile.router import users_router
 from routes.health import router as health_router
@@ -46,6 +47,7 @@ async def lifespan(app: FastAPI):
 
     clerk_client = Clerk(bearer_auth=config.clerk_secret_key)
     app.state.tenant_resolver = TenantResolver(clerk_client)
+    app.state.ws_manager = ConnectionManager()
     logger.info("clerk_initialized")
 
     session_maker = await DatabaseConnection.initialize(

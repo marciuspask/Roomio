@@ -122,6 +122,26 @@ export interface Conversation {
    */
   unread_count?: number;
   /**
+   * Listing Title
+   * Title of the listing this conversation is about
+   */
+  listing_title?: string | null;
+  /**
+   * Participant Display Names
+   * Display name keyed by tenant_id
+   */
+  participant_display_names?: Record<string, string>;
+  /**
+   * Participant Ages
+   * Age keyed by tenant_id
+   */
+  participant_ages?: Record<string, number | null>;
+  /**
+   * Participant Image Urls
+   * Avatar URL keyed by tenant_id
+   */
+  participant_image_urls?: Record<string, string | null>;
+  /**
    * Created At
    * Timestamp when the conversation was created
    * @format date-time
@@ -582,7 +602,6 @@ export interface Profile {
   /**
    * Date Of Birth
    * User's date of birth (private)
-   * @format date
    */
   date_of_birth?: string | null;
   /**
@@ -647,7 +666,6 @@ export interface ProfileUpdate {
   /**
    * Date Of Birth
    * User's date of birth
-   * @format date
    */
   date_of_birth?: string | null;
   /**

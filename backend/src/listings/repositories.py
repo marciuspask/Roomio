@@ -56,6 +56,14 @@ class ListingsRepository(TenantRepository[ListingORM, Listing]):
 
         return listings
 
+    async def get_titles_bulk(self, listing_ids: list[str]) -> dict[str, str]:
+        """Return title keyed by listing_id for a set of IDs in one query."""
+        if not listing_ids:
+            return {}
+        stmt = select(ListingORM.id, ListingORM.title).where(ListingORM.id.in_(listing_ids))
+        result = await self.session.execute(stmt)
+        return {row.id: row.title for row in result.all()}
+
     async def create_listing(self, data: ListingCreate) -> Listing:
         """Create a listing. tenant_id is auto-injected by TenantRepository."""
         return await self._create(data)
