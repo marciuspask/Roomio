@@ -1,4 +1,7 @@
+from datetime import date
+
 import structlog
+from fastapi import HTTPException, status
 
 from common.database.unit_of_work import UnitOfWorkFactory
 from models import AuthMethod, TenantContext, TenantType, UserRole
@@ -48,6 +51,19 @@ class ProfileService:
             )
 
     async def update_profile(self, data: ProfileUpdate) -> Profile:
+        if data.date_of_birth is not None:
+            today = date.today()
+            dob = data.date_of_birth
+            computed_age = (
+                today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            )
+            if computed_age < 18:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="You must be 18 or older to use Roomio",
+                )
+            data = data.model_copy(update={"age": computed_age})
+
         async with self._uow_factory.create(
             ProfileUnitOfWork, self._tenant_context,
         ) as uow:

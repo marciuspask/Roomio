@@ -272,6 +272,11 @@ export interface Listing {
    */
   poster_image_url?: string | null;
   /**
+   * Poster Age
+   * Poster's age
+   */
+  poster_age?: number | null;
+  /**
    * Created At
    * When the listing was created
    * @format date-time
@@ -575,6 +580,17 @@ export interface Profile {
    */
   image_url?: string | null;
   /**
+   * Date Of Birth
+   * User's date of birth (private)
+   * @format date
+   */
+  date_of_birth?: string | null;
+  /**
+   * Age
+   * User's age, computed from date of birth
+   */
+  age?: number | null;
+  /**
    * Created At
    * Timestamp when the profile was created
    * @format date-time
@@ -628,6 +644,17 @@ export interface ProfileUpdate {
    * Profile photo URL from Clerk
    */
   image_url?: string | null;
+  /**
+   * Date Of Birth
+   * User's date of birth
+   * @format date
+   */
+  date_of_birth?: string | null;
+  /**
+   * Age
+   * User's age (server-computed)
+   */
+  age?: number | null;
 }
 
 /** SavedListingsResponse */

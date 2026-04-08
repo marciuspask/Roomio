@@ -71,6 +71,9 @@ const PublicProfilePage = () => {
                 <h1 className="font-heading text-2xl font-bold text-foreground">
                   {profile.display_name || "Roomio User"}
                 </h1>
+                {profile.age != null && (
+                  <p className="mt-0.5 text-sm text-muted-foreground">{profile.age} years old</p>
+                )}
                 {profile.occupation && (
                   <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
                     <Briefcase size={13} />

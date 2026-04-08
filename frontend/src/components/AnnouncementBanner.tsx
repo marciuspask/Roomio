@@ -8,13 +8,9 @@ interface Announcement {
   active: boolean;
 }
 
-const DISMISSED_KEY = "dismissed_announcement";
-
 export default function AnnouncementBanner() {
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
-  const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem(DISMISSED_KEY) === "1",
-  );
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     fetch("/announcement.json")
@@ -47,7 +43,6 @@ export default function AnnouncementBanner() {
   if (!announcement || dismissed) return null;
 
   const handleDismiss = () => {
-    localStorage.setItem(DISMISSED_KEY, "1");
     setDismissed(true);
   };
 

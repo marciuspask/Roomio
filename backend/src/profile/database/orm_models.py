@@ -1,6 +1,7 @@
 import uuid
+from datetime import date
 
-from sqlalchemy import Boolean, String, Text
+from sqlalchemy import Boolean, Date, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from common.database.base_models import Base, TenantAwareModel, TimestampModel
@@ -25,3 +26,5 @@ class ProfileORM(Base, TimestampModel, TenantAwareModel):
         Boolean, nullable=False, default=False, server_default="false",
     )
     image_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
+    age: Mapped[int | None] = mapped_column(Integer, nullable=True)

@@ -278,7 +278,9 @@ const Dashboard = () => {
                 ) : (
                   myListings.slice(0, 3).map(l => (
                     <div key={l.id} className="mb-2 flex items-center gap-4 rounded-xl border border-border bg-card p-3 shadow-sm">
-                      <div className="h-16 w-20 shrink-0 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5" />
+                      <div className="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+                        {l.photos?.[0] && <img src={l.photos[0]} alt={l.title} className="h-full w-full object-cover" />}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="truncate text-sm font-medium text-foreground">{l.title}</h4>
                         <p className="text-xs text-muted-foreground">{l.district ? `${l.district} · ` : ""}{l.city} · €{l.price}/mo</p>
@@ -355,7 +357,9 @@ const Dashboard = () => {
                 <div className="space-y-3">
                   {myListings.map(l => (
                     <div key={l.id} className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-                      <div className="h-20 w-28 shrink-0 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5" />
+                      <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+                        {l.photos?.[0] && <img src={l.photos[0]} alt={l.title} className="h-full w-full object-cover" />}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-medium text-foreground">{l.title}</h4>
                         <p className="text-xs text-muted-foreground">

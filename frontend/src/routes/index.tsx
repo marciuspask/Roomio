@@ -9,6 +9,8 @@ import VerifyPhone from "@/features/auth/VerifyPhone";
 import Dashboard from "@/features/dashboard/Dashboard";
 import NotFound from "@/components/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import OnboardingGuard from "@/components/OnboardingGuard";
+import OnboardingPage from "@/pages/OnboardingPage";
 
 const clerkAppearance = {
   variables: {
@@ -20,24 +22,27 @@ const clerkAppearance = {
 };
 
 const AppRoutes = () => (
-  <Routes>
-    <Route path="/" element={<Landing />} />
-    <Route path="/listings" element={<BrowseListings />} />
-    <Route path="/listings/create" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
-    <Route path="/listings/:id/edit" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
-    <Route path="/listings/:id" element={<ListingDetail />} />
-    <Route path="/users/:id" element={<PublicProfilePage />} />
-    <Route path="/login/*" element={<div style={{ minHeight: "100vh", background: "#FFFAF7", display: "flex", alignItems: "center", justifyContent: "center" }}><SignIn routing="path" path="/login" fallbackRedirectUrl="/dashboard" appearance={clerkAppearance} /></div>} />
-    <Route path="/register/*" element={<div style={{ minHeight: "100vh", background: "#FFFAF7", display: "flex", alignItems: "center", justifyContent: "center" }}><SignUp routing="path" path="/register" fallbackRedirectUrl="/dashboard" appearance={clerkAppearance} /></div>} />
-    <Route path="/verify-phone" element={<VerifyPhone />} />
-    <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
-    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/dashboard/listings" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/dashboard/messages" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/dashboard/saved" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/dashboard/profile" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
+  <OnboardingGuard>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/listings" element={<BrowseListings />} />
+      <Route path="/listings/create" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
+      <Route path="/listings/:id/edit" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
+      <Route path="/listings/:id" element={<ListingDetail />} />
+      <Route path="/users/:id" element={<PublicProfilePage />} />
+      <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+      <Route path="/login/*" element={<div style={{ minHeight: "100vh", background: "#FFFAF7", display: "flex", alignItems: "center", justifyContent: "center" }}><SignIn routing="path" path="/login" fallbackRedirectUrl="/onboarding" appearance={clerkAppearance} /></div>} />
+      <Route path="/register/*" element={<div style={{ minHeight: "100vh", background: "#FFFAF7", display: "flex", alignItems: "center", justifyContent: "center" }}><SignUp routing="path" path="/register" fallbackRedirectUrl="/onboarding" appearance={clerkAppearance} /></div>} />
+      <Route path="/verify-phone" element={<VerifyPhone />} />
+      <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard/listings" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard/messages" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard/saved" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard/profile" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  </OnboardingGuard>
 );
 
 export default AppRoutes;

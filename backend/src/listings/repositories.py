@@ -28,6 +28,7 @@ class ListingsRepository(TenantRepository[ListingORM, Listing]):
         if profile:
             listing.poster_display_name = profile.display_name
             listing.poster_image_url = profile.image_url
+            listing.poster_age = profile.age
         return listing
 
     async def get_all_active(self) -> list[Listing]:
@@ -51,6 +52,7 @@ class ListingsRepository(TenantRepository[ListingORM, Listing]):
             if profile:
                 listing.poster_display_name = profile.display_name
                 listing.poster_image_url = profile.image_url
+                listing.poster_age = profile.age
 
         return listings
 

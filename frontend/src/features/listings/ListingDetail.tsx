@@ -270,6 +270,7 @@ const ListingDetail = () => {
                 <div>
                   <div className="text-sm font-semibold text-foreground">
                     {poster?.display_name || "Anonymous"}
+                    {poster?.age != null ? `, ${poster.age}` : ""}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {poster?.is_phone_verified ? "✓ Phone verified · " : ""}{listing.city}

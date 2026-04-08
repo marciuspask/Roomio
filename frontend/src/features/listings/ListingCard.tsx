@@ -106,6 +106,7 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
         </div>
         <span className="text-xs text-muted-foreground">
           {listing.poster_display_name ?? (listing.listing_type === "offering" ? "Room owner" : "Room seeker")}
+          {listing.poster_age != null ? `, ${listing.poster_age}` : ""}
         </span>
       </div>
     </Link>

@@ -43,6 +43,7 @@ class Listing(BaseModel):
     photos: list[str] = Field(default=[], description="List of photo URLs for the listing")
     poster_display_name: str | None = Field(default=None, description="Poster's display name")
     poster_image_url: str | None = Field(default=None, description="Poster's profile photo URL")
+    poster_age: int | None = Field(default=None, description="Poster's age")
     created_at: datetime = Field(description="When the listing was created")
     updated_at: datetime = Field(description="When the listing was last updated")
 
