@@ -179,7 +179,11 @@ const ListingDetail = () => {
               <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <MapPin size={14} />
-                  {listing.district ? `${listing.district}, ` : ""}{listing.city}
+                  {listing.street_address
+                    ? `${listing.street_address.replace(/\s+\d+[a-zA-Z]?\s*$/, "").trim()}, ${listing.city}`
+                    : listing.district
+                      ? `${listing.district}, ${listing.city}`
+                      : listing.city}
                 </span>
                 <span className="flex items-center gap-1"><Calendar size={14} /> Available from {dateStr}</span>
               </div>

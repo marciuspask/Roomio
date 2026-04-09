@@ -42,12 +42,20 @@ class ListingsService:
             tenant_context or self._tenant_context or _ANON_CONTEXT,
         )
 
+    def _redact(self, listing: Listing) -> Listing:
+        """Strip street_address unless the current tenant owns the listing."""
+        viewer_id = self._tenant_context.tenant_id if self._tenant_context else None
+        if viewer_id != listing.tenant_id:
+            return listing.model_copy(update={"street_address": None})
+        return listing
+
     # -- Public methods (no auth required) ------------------------------------
 
     async def get_all_listings(self) -> list[Listing]:
         """Return all active listings across all tenants."""
         async with self._uow() as uow:
-            return await uow.listings.get_all_active()
+            listings = await uow.listings.get_all_active()
+        return [self._redact(listing) for listing in listings]
 
     async def get_listing(self, listing_id: str) -> Listing:
         """Return a single listing by ID, visible to anyone."""
@@ -55,7 +63,7 @@ class ListingsService:
             listing = await uow.listings.get_public_by_id(listing_id)
         if listing is None:
             raise ListingError.not_found(listing_id)
-        return listing
+        return self._redact(listing)
 
     # -- Tenant methods (auth required) ----------------------------------------
 

@@ -14,6 +14,7 @@ import {
   AdminTestResponse,
   ConversationResponse,
   ConversationsResponse,
+  GeocodeResult,
   HTTPValidationError,
   ListingCreate,
   ListingResponse,
@@ -34,6 +35,31 @@ import { ContentType, HttpClient, RequestParams } from "./http-client";
 export class Api<
   SecurityDataType = unknown,
 > extends HttpClient<SecurityDataType> {
+  /**
+   * No description
+   *
+   * @tags geocode
+   * @name GeocodeApiV1GeocodeGet
+   * @summary Geocode
+   * @request GET:/api/v1/geocode
+   */
+  geocodeApiV1GeocodeGet = (
+    query: {
+      /**
+       * Address
+       * @minLength 1
+       */
+      address: string;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<GeocodeResult, HTTPValidationError>({
+      path: `/api/v1/geocode`,
+      method: "GET",
+      query: query,
+      format: "json",
+      ...params,
+    });
   /**
    * No description
    *

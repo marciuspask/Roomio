@@ -16,3 +16,6 @@ class Settings(BaseSettings):
     port: int = Field(default=8000, description="Port the server listens on")
     clerk_secret_key: str = Field(description="Clerk secret key for JWT verification")
     database_url: str = Field(description="PostgreSQL async connection string (postgresql+asyncpg://...)")
+    google_maps_api_key: str = Field(
+        default="", description="Google Maps API key for server-side geocoding",
+    )

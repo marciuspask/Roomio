@@ -41,3 +41,4 @@ class ListingORM(Base, TimestampModel, TenantAwareModel):
     photos: Mapped[list] = mapped_column(
         JSON, nullable=False, default=list, server_default="[]",
     )
+    street_address: Mapped[str | None] = mapped_column(String(255), nullable=True)

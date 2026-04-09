@@ -323,7 +323,13 @@ const Dashboard = () => {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground">{displayName}</p>
                             <p className="truncate text-xs text-muted-foreground">
-                              {c.listing_title ? `Re: ${c.listing_title}` : "No messages yet"}
+                              {c.last_message?.body
+                                ? c.last_message.body.length > 45
+                                  ? c.last_message.body.slice(0, 45) + "…"
+                                  : c.last_message.body
+                                : c.listing_title
+                                  ? `Re: ${c.listing_title}`
+                                  : "No messages yet"}
                             </p>
                           </div>
                         </Link>
@@ -479,7 +485,13 @@ const Dashboard = () => {
                             </span>
                           </div>
                           <p className={`truncate text-xs text-muted-foreground ${c.unread_count > 0 ? "font-medium" : ""}`}>
-                            {c.listing_title ? `Re: ${c.listing_title}` : "No messages yet"}
+                            {c.last_message?.body
+                                ? c.last_message.body.length > 45
+                                  ? c.last_message.body.slice(0, 45) + "…"
+                                  : c.last_message.body
+                                : c.listing_title
+                                  ? `Re: ${c.listing_title}`
+                                  : "No messages yet"}
                           </p>
                         </div>
                       </button>

@@ -61,7 +61,7 @@ class MessagesService:
             image_urls: dict[str, str | None] = {}
             for pid in conv.participant_ids:
                 p = profiles_map.get(pid)
-                display_names[pid] = p.display_name if p else f"User \u2026{pid[-6:]}"
+                display_names[pid] = p.display_name if p and p.display_name else f"User \u2026{pid[-6:]}"
                 ages[pid] = p.age if p else None
                 image_urls[pid] = p.image_url if p else None
             enriched.append(conv.model_copy(update={

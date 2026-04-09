@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Message, MessagesResponse } from "@/api/generated/data-contracts";
+import type { Message, MessagesResponse, ConversationsResponse } from "@/api/generated/data-contracts";
 
 const WS_BASE = (import.meta.env.VITE_WS_URL as string | undefined) ?? "ws://localhost:8000";
 const MAX_RETRIES = 5;
@@ -42,6 +42,19 @@ export function useWebSocket(conversationId: string | null) {
             if (!old) return { data: [message] };
             if (old.data.some((m) => m.id === message.id)) return old;
             return { data: [...old.data, message] };
+          },
+        );
+        queryClient.setQueryData<ConversationsResponse>(
+          ["conversations"],
+          (old) => {
+            if (!old) return old;
+            return {
+              data: old.data.map((conv) =>
+                conv.id === conversationId
+                  ? { ...conv, last_message: message }
+                  : conv,
+              ),
+            };
           },
         );
       } catch {

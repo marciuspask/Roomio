@@ -171,7 +171,6 @@ const BrowseListings = () => {
 
   const toggleDraftCity = (c: string) => {
     setDraftCities(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
-    // clear district drafts that no longer belong to remaining cities
     setDraftDistricts([]);
   };
 
@@ -280,7 +279,7 @@ const BrowseListings = () => {
           </aside>
 
           {/* Main */}
-          <main className="flex-1">
+          <main className="flex-1 min-w-0">
             <div className="mb-4 hidden items-center justify-between md:flex">
               <span className="text-sm font-medium text-foreground">{filtered.length} listings found</span>
               <select

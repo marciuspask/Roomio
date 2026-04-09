@@ -30,6 +30,7 @@ from messages.router import router as messages_router
 from messages.websocket import ConnectionManager
 from profile.router import router as profile_router
 from profile.router import users_router
+from routes.geocode import router as geocode_router
 from routes.health import router as health_router
 from routes.me import router as me_router
 from saved.router import router as saved_router
@@ -101,6 +102,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RequestValidationError, request_validation_error_handler)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, generic_exception_handler)
 
+    app.include_router(geocode_router)
     app.include_router(health_router)
     app.include_router(me_router)
     app.include_router(profile_router)

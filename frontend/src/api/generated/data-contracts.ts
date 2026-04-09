@@ -170,6 +170,14 @@ export interface ConversationsResponse {
   data: Conversation[];
 }
 
+/** GeocodeResult */
+export interface GeocodeResult {
+  /** Lat */
+  lat: number;
+  /** Lng */
+  lng: number;
+}
+
 /** HTTPValidationError */
 export interface HTTPValidationError {
   /** Detail */
@@ -282,6 +290,11 @@ export interface Listing {
    */
   photos?: string[];
   /**
+   * Street Address
+   * Street address — only visible to the listing owner, null for other viewers
+   */
+  street_address?: string | null;
+  /**
    * Poster Display Name
    * Poster's display name
    */
@@ -374,6 +387,11 @@ export interface ListingCreate {
    */
   status?: ListingStatus;
   /**
+   * Street Address
+   * Street address of the room (optional, kept private)
+   */
+  street_address?: string | null;
+  /**
    * Photos
    * List of photo URLs for the listing
    * @default []
@@ -440,6 +458,11 @@ export interface ListingUpdate {
   gender_pref?: GenderPref | null;
   /** Current listing status */
   status?: ListingStatus | null;
+  /**
+   * Street Address
+   * Street address of the room (optional, kept private)
+   */
+  street_address?: string | null;
   /**
    * Photos
    * List of photo URLs for the listing

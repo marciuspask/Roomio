@@ -41,6 +41,10 @@ class Listing(BaseModel):
     status: ListingStatus = Field(description="Current listing status")
     is_boosted: bool = Field(description="Whether the listing is boosted for higher visibility")
     photos: list[str] = Field(default=[], description="List of photo URLs for the listing")
+    street_address: str | None = Field(
+        default=None,
+        description="Street address — only visible to the listing owner, null for other viewers",
+    )
     poster_display_name: str | None = Field(default=None, description="Poster's display name")
     poster_image_url: str | None = Field(default=None, description="Poster's profile photo URL")
     poster_age: int | None = Field(default=None, description="Poster's age")
@@ -65,6 +69,9 @@ class ListingCreate(BaseModel):
     status: ListingStatus = Field(
         default=ListingStatus.DRAFT, description="Initial listing status",
     )
+    street_address: str | None = Field(
+        default=None, description="Street address of the room (optional, kept private)",
+    )
     photos: list[str] = Field(default=[], description="List of photo URLs for the listing")
 
 
@@ -87,6 +94,9 @@ class ListingUpdate(BaseModel):
         default=None, description="Preferred gender of the tenant",
     )
     status: ListingStatus | None = Field(default=None, description="Current listing status")
+    street_address: str | None = Field(
+        default=None, description="Street address of the room (optional, kept private)",
+    )
     photos: list[str] | None = Field(default=None, description="List of photo URLs for the listing")
 
 

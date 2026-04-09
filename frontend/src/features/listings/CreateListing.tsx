@@ -11,8 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { ListingType, GenderPref, ListingStatus } from "@/api/generated/data-contracts";
 import type { Listing } from "@/api/generated/data-contracts";
-import { Home, Search } from "lucide-react";
+import { Home, Search, Lock } from "lucide-react";
 import PhotoUpload from "@/components/PhotoUpload";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 const CreateListing = () => {
   const { isSignedIn } = useAuth();
@@ -41,6 +42,10 @@ const CreateListing = () => {
   const [price, setPrice] = useState("");
   const [utilitiesIncl, setUtilitiesIncl] = useState(false);
 
+  const [streetAddress, setStreetAddress] = useState("");
+  const [addressSelected, setAddressSelected] = useState(false);
+  const [addressError, setAddressError] = useState("");
+
   // Step 2
   const [description, setDescription] = useState("");
   const [availableFrom, setAvailableFrom] = useState("");
@@ -64,6 +69,9 @@ const CreateListing = () => {
       const isOther = existingDistrict !== "" && !predefined.includes(existingDistrict);
       setDistrict(existingDistrict);
       setDistrictOther(isOther);
+      const addr = existing.street_address ?? "";
+      setStreetAddress(addr);
+      if (addr) setAddressSelected(true);
       setPrice(String(existing.price));
       setUtilitiesIncl(existing.utilities_incl);
       setDescription(existing.description);
@@ -137,6 +145,7 @@ const CreateListing = () => {
           description,
           city,
           district: district || null,
+          street_address: streetAddress || null,
           price: parseInt(price),
           utilities_incl: utilitiesIncl,
           available_from: availableFrom,
@@ -154,6 +163,7 @@ const CreateListing = () => {
           description,
           city,
           district: district || null,
+          street_address: streetAddress || null,
           price: parseInt(price),
           utilities_incl: utilitiesIncl,
           available_from: availableFrom,
@@ -253,6 +263,39 @@ const CreateListing = () => {
                 className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
               />
             )}
+            <div>
+              <AddressAutocomplete
+                value={streetAddress}
+                onChange={(val) => {
+                  setStreetAddress(val);
+                  setAddressSelected(false);
+                  setAddressError("");
+                }}
+                onPlaceSelect={({ address, district, city }) => {
+                  setStreetAddress(address);
+                  setAddressSelected(true);
+                  setAddressError("");
+                  if (city) setCity(city);
+                  if (district) {
+                    const predefined = DISTRICTS[city] ?? [];
+                    setDistrict(district);
+                    setDistrictOther(!predefined.includes(district));
+                  }
+                }}
+                className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary bg-background ${
+                  addressError ? "border-destructive focus:border-destructive" : "border-border focus:border-primary"
+                }`}
+              />
+              {addressError && (
+                <p className="mt-1 text-xs text-destructive">{addressError}</p>
+              )}
+              <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-surface-elevated px-3 py-2">
+                <Lock size={12} className="mt-0.5 shrink-0 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">
+                  Your exact address is only visible to you. Others see only the neighbourhood.
+                </p>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <input type="number" placeholder="Price" value={price} onChange={e => setPrice(e.target.value)}
                 className="w-32 rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
@@ -263,8 +306,17 @@ const CreateListing = () => {
                 className="rounded border-border text-primary focus:ring-primary" />
               Utilities included in price
             </label>
-            <button onClick={() => setStep(1)} disabled={!listingType || !title || !city || !price}
-              className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50">
+            <button
+              onClick={() => {
+                if (!addressSelected) {
+                  setAddressError("Please select an address from the suggestions");
+                  return;
+                }
+                setStep(1);
+              }}
+              disabled={!listingType || !title || !city || !price}
+              className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50"
+            >
               Continue →
             </button>
           </div>
