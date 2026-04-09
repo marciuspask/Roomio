@@ -1,4 +1,5 @@
 import structlog
+from contextlib import AbstractAsyncContextManager
 
 from common.database.unit_of_work import UnitOfWorkFactory
 from models import TenantContext
@@ -16,7 +17,7 @@ class SavedListingsService:
         self._uow_factory = uow_factory
         self._tenant_context = tenant_context
 
-    def _uow(self):
+    def _uow(self) -> AbstractAsyncContextManager[SavedListingsUnitOfWork]:
         return self._uow_factory.create(SavedListingsUnitOfWork, self._tenant_context)
 
     async def get_saved_ids(self) -> list[str]:

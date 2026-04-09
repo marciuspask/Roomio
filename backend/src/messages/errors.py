@@ -1,6 +1,17 @@
 from errors.base import BaseAppError, ErrorData
 
 
+class WsCloseCode:
+    """Application-level WebSocket close codes (4000-4999 range).
+
+    RFC 6455 reserves 4000-4999 for application use.
+    """
+    AUTH_FAILED = 4001   # invalid/missing JWT token
+    FORBIDDEN = 4003     # user is not a participant
+    NOT_FOUND = 4004     # conversation doesn't exist
+    INTERNAL = 4011      # unexpected server failure
+
+
 class MessageError(BaseAppError):
     @classmethod
     def not_found(cls, conversation_id: str) -> "MessageError":

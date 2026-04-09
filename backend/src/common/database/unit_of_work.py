@@ -67,7 +67,9 @@ class UnitOfWorkFactory:
     async def create(self, uow_class: type[T], *args: Any) -> AsyncGenerator[T, None]:
         """Create a UoW with a fresh session.
 
-        Extra *args are forwarded to uow_class.__init__ after session.
+        NOTE: *args: Any is a type-safety escape hatch. The type checker cannot
+        verify that the args match uow_class.__init__. A future improvement would
+        use @overload or explicit factory methods per UoW type.
         """
         session = self._session_maker()
         try:

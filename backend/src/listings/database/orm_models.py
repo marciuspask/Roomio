@@ -38,7 +38,7 @@ class ListingORM(Base, TimestampModel, TenantAwareModel):
     is_boosted: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false",
     )
-    photos: Mapped[list] = mapped_column(
+    photos: Mapped[list[str]] = mapped_column(
         JSON, nullable=False, default=list, server_default="[]",
     )
     street_address: Mapped[str | None] = mapped_column(String(255), nullable=True)

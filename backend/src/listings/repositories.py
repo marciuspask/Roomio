@@ -5,7 +5,6 @@ from common.database.repository import TenantRepository
 from listings.database.orm_models import ListingORM
 from listings.models import Listing, ListingCreate, ListingUpdate
 from models import TenantContext
-from profile.database.orm_models import ProfileORM
 
 
 class ListingsRepository(TenantRepository[ListingORM, Listing]):
@@ -21,40 +20,17 @@ class ListingsRepository(TenantRepository[ListingORM, Listing]):
         entity = await self.session.get(ListingORM, listing_id)
         if entity is None:
             return None
-        listing = self.to_model(entity)
-        profile = await self.session.scalar(
-            select(ProfileORM).where(ProfileORM.tenant_id == entity.tenant_id),
-        )
-        if profile:
-            listing.poster_display_name = profile.display_name
-            listing.poster_image_url = profile.image_url
-            listing.poster_age = profile.age
-        return listing
+        return self.to_model(entity)
 
     async def get_all_active(self) -> list[Listing]:
         """Get all active listings across all tenants — public, no tenant filter."""
-        stmt = select(ListingORM).where(ListingORM.status == "active")
-        result = await self.session.execute(stmt)
-        orm_listings = list(result.scalars().all())
-        listings = self.to_model_list(orm_listings)
-
-        if not listings:
-            return listings
-
-        tenant_ids = list({listing.tenant_id for listing in listings})
-        profiles_result = await self.session.execute(
-            select(ProfileORM).where(ProfileORM.tenant_id.in_(tenant_ids)),
+        stmt = (
+            select(ListingORM)
+            .where(ListingORM.status == "active")
+            .where(ListingORM.tenant_type == "user")
         )
-        profiles_by_tenant = {p.tenant_id: p for p in profiles_result.scalars().all()}
-
-        for listing in listings:
-            profile = profiles_by_tenant.get(listing.tenant_id)
-            if profile:
-                listing.poster_display_name = profile.display_name
-                listing.poster_image_url = profile.image_url
-                listing.poster_age = profile.age
-
-        return listings
+        result = await self.session.execute(stmt)
+        return self.to_model_list(list(result.scalars().all()))
 
     async def get_titles_bulk(self, listing_ids: list[str]) -> dict[str, str]:
         """Return title keyed by listing_id for a set of IDs in one query."""

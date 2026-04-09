@@ -3,10 +3,9 @@ import json
 import structlog
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
 
-from auth.dependencies import AuthError, TenantResolver
-from common.database.unit_of_work import UnitOfWorkFactory
-from di import MessagesServiceDep
-from messages.errors import MessageError
+from auth.dependencies import AuthError
+from di import MessagesServiceDep, get_connection_manager, get_tenant_resolver, get_ws_messages_service
+from messages.errors import MessageError, WsCloseCode
 from messages.models import (
     ConversationResponse,
     ConversationsResponse,
@@ -14,8 +13,6 @@ from messages.models import (
     MessageResponse,
     MessagesResponse,
 )
-from messages.service import MessagesService
-from messages.websocket import ConnectionManager
 
 logger = structlog.get_logger(__name__)
 
@@ -95,22 +92,25 @@ async def websocket_endpoint(
     conversation_id: str,
     token: str = Query(...),
 ) -> None:
-    resolver: TenantResolver = websocket.app.state.tenant_resolver  # type: ignore[attr-defined]
+    await websocket.accept()
+
     try:
-        tenant = resolver.get_tenant_context(f"Bearer {token}")
+        tenant = get_tenant_resolver(websocket).get_tenant_context(f"Bearer {token}")
     except AuthError:
-        await websocket.close(code=4001)
+        await websocket.close(code=WsCloseCode.AUTH_FAILED)
         return
 
-    manager: ConnectionManager = websocket.app.state.ws_manager  # type: ignore[attr-defined]
-    session_maker = websocket.app.state.session_maker  # type: ignore[attr-defined]
-    uow_factory = UnitOfWorkFactory(session_maker)
-    service = MessagesService(uow_factory=uow_factory, tenant_context=tenant)
+    manager = get_connection_manager(websocket)
+    service = get_ws_messages_service(websocket, tenant)
 
     try:
         await service.get_conversation(conversation_id)
-    except (MessageError, Exception):
-        await websocket.close(code=4004)
+    except MessageError as exc:
+        await websocket.close(code=WsCloseCode.NOT_FOUND, reason=exc.error_code)
+        return
+    except Exception:
+        logger.error("ws_connect_failed", conversation_id=conversation_id, exc_info=True)
+        await websocket.close(code=WsCloseCode.INTERNAL)
         return
 
     await manager.connect(websocket, conversation_id)

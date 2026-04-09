@@ -24,6 +24,7 @@ from errors.handlers import (
     request_validation_error_handler,
 )
 from listings.router import router as listings_router
+from migration.router import router as migration_router
 from logging_config import configure_logging
 from messages.router import listings_router as message_listings_router
 from messages.router import router as messages_router
@@ -109,6 +110,7 @@ def create_app() -> FastAPI:
     app.include_router(users_router)
     app.include_router(settings_router)
     app.include_router(listings_router)
+    app.include_router(migration_router)
     app.include_router(messages_router)
     app.include_router(message_listings_router)
     app.include_router(saved_router)

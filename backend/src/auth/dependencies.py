@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated
 
 import structlog
@@ -104,6 +105,27 @@ class TenantResolver:
         except Exception as e:
             logger.warning("auth_verification_failed", error=str(e))
             raise AuthError.invalid_token() from None
+
+
+def get_anonymous_context(
+    x_anonymous_id: Annotated[str | None, Header()] = None,
+) -> TenantContext:
+    """Build an anonymous TenantContext from client-provided header.
+
+    The client sends X-Anonymous-Id (a UUID generated once in localStorage).
+    If missing, generate a transient one for this request only.
+    """
+    anon_id = x_anonymous_id or f"anon-{uuid.uuid4()}"
+    return TenantContext(
+        tenant_id=anon_id,
+        tenant_type=TenantType.ANONYMOUS,
+        user_id=anon_id,
+        username="Anonymous",
+        email=None,
+        role=UserRole.USER,
+        auth_method=AuthMethod.ANONYMOUS,
+        is_admin=False,
+    )
 
 
 def get_tenant_context_from_header(

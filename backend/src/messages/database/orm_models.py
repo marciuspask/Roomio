@@ -14,7 +14,7 @@ class ConversationORM(Base, TimestampModel):
         String(36), primary_key=True, default=lambda: str(uuid.uuid4()),
     )
     listing_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
-    participant_ids: Mapped[list] = mapped_column(JSONB, nullable=False)
+    participant_ids: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active", server_default="active",
     )

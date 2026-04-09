@@ -12,6 +12,14 @@ class ProfileError(BaseAppError):
         ))
 
     @classmethod
+    def underage(cls) -> "ProfileError":
+        return cls(ErrorData(
+            detail="You must be 18 or older to use Roomio",
+            error_code="PROFILE_UNDERAGE",
+            status_code=422,
+        ))
+
+    @classmethod
     def update_failed(cls, tenant_id: str) -> "ProfileError":
         return cls(ErrorData(
             detail=f"Failed to update profile for tenant: {tenant_id}",

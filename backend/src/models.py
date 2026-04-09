@@ -5,10 +5,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class AuthMethod(StrEnum):
     BEARER = "bearer"
+    ANONYMOUS = "anonymous"
 
 
 class TenantType(StrEnum):
     USER = "user"
+    ANONYMOUS = "anonymous"
 
 
 class UserRole(StrEnum):

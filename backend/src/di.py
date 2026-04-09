@@ -2,12 +2,13 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 
-from auth.dependencies import get_tenant_context_from_header, require_admin
+from auth.dependencies import TenantResolver, get_anonymous_context, get_tenant_context_from_header, require_admin
 from common.database.unit_of_work import UnitOfWorkFactory
 from listings.service import ListingsService
 from messages.service import MessagesService
+from migration.service import MigrationService
 from messages.websocket import ConnectionManager
-from models import AuthMethod, TenantContext, TenantType, UserRole
+from models import TenantContext
 from profile.service import ProfileService
 from saved.service import SavedListingsService
 from settings.service import SettingsService
@@ -30,11 +31,7 @@ ProfileServiceDep = Annotated[ProfileService, Depends(get_profile_service)]
 def get_public_profile_service(request: Request) -> ProfileService:
     session_maker = request.app.state.session_maker
     uow_factory = UnitOfWorkFactory(session_maker)
-    anon = TenantContext(
-        tenant_id="", tenant_type=TenantType.USER, user_id="", username="",
-        email=None, role=UserRole.USER, auth_method=AuthMethod.BEARER, is_admin=False,
-    )
-    return ProfileService(uow_factory=uow_factory, tenant_context=anon)
+    return ProfileService(uow_factory=uow_factory, tenant_context=get_anonymous_context())
 
 
 PublicProfileServiceDep = Annotated[ProfileService, Depends(get_public_profile_service)]
@@ -69,10 +66,21 @@ ListingsServiceDep = Annotated[ListingsService, Depends(get_listings_service)]
 PublicListingsServiceDep = Annotated[ListingsService, Depends(get_public_listings_service)]
 
 
-# -- WebSocket connection manager ---------------------------------------------
+# -- WebSocket helpers --------------------------------------------------------
+
+def get_tenant_resolver(request: Request) -> TenantResolver:
+    return request.app.state.tenant_resolver  # type: ignore[no-any-return]
+
 
 def get_connection_manager(request: Request) -> ConnectionManager:
     return request.app.state.ws_manager  # type: ignore[no-any-return]
+
+
+def get_ws_messages_service(request: Request, tenant: TenantContext) -> MessagesService:
+    """Build MessagesService for WebSocket handlers. Same wiring as HTTP."""
+    session_maker = request.app.state.session_maker
+    uow_factory = UnitOfWorkFactory(session_maker)
+    return MessagesService(uow_factory=uow_factory, tenant_context=tenant)
 
 
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
@@ -98,4 +106,15 @@ def get_saved_listings_service(request: Request, tenant: TenantDep) -> SavedList
 
 
 SavedListingsServiceDep = Annotated[SavedListingsService, Depends(get_saved_listings_service)]
+
+
+# -- Migration ----------------------------------------------------------------
+
+def get_migration_service(request: Request, tenant: TenantDep) -> MigrationService:
+    session_maker = request.app.state.session_maker
+    uow_factory = UnitOfWorkFactory(session_maker)
+    return MigrationService(uow_factory=uow_factory, tenant_context=tenant)
+
+
+MigrationServiceDep = Annotated[MigrationService, Depends(get_migration_service)]
 

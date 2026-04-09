@@ -1,4 +1,4 @@
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common.database.repository import TenantRepository
@@ -39,6 +39,27 @@ class SavedListingsRepository(TenantRepository[SavedListingORM, SavedListing]):
 
     async def is_saved(self, listing_id: str) -> bool:
         return await self._get_by_listing_id(listing_id) is not None
+
+    async def migrate_tenant(
+        self,
+        old_tenant_id: str,
+        new_tenant_id: str,
+        new_tenant_type: str,
+    ) -> int:
+        """Reassign all rows from old_tenant_id to new_tenant_id.
+
+        Bypasses TenantRepository scoping intentionally — this is a privileged
+        cross-tenant operation only called during anonymous→registered migration.
+        Returns the number of rows updated.
+        """
+        stmt = (
+            update(SavedListingORM)
+            .where(SavedListingORM.tenant_id == old_tenant_id)
+            .values(tenant_id=new_tenant_id, tenant_type=new_tenant_type)
+        )
+        result = await self.session.execute(stmt)
+        await self.session.flush()
+        return result.rowcount  # type: ignore[return-value]
 
     async def _get_by_listing_id(self, listing_id: str) -> SavedListing | None:
         stmt = (

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -259,18 +259,3 @@ class TenantRepository(BaseRepository[TOrm, TModel]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one()
-
-    # -- Tenant-specific helper -----------------------------------------------
-
-    async def get_by_field(self, field_name: str, value: Any) -> TModel | None:
-        """Get entity by an arbitrary field, scoped to tenant."""
-        stmt = (
-            select(self.orm_class)
-            .where(self.orm_class.tenant_id == self._tenant_id)  # type: ignore[attr-defined]
-            .where(getattr(self.orm_class, field_name) == value)
-        )
-        result = await self.session.execute(stmt)
-        entity = result.scalars().first()
-        if entity is None:
-            return None
-        return self.to_model(entity)

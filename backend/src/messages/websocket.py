@@ -9,7 +9,6 @@ class ConnectionManager:
         self.active_connections: dict[str, list[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, conversation_id: str) -> None:
-        await websocket.accept()
         if conversation_id not in self.active_connections:
             self.active_connections[conversation_id] = []
         self.active_connections[conversation_id].append(websocket)
@@ -29,4 +28,9 @@ class ConnectionManager:
             try:
                 await connection.send_text(message_data)
             except Exception:
+                logger.warning(
+                    "ws_broadcast_failed",
+                    conversation_id=conversation_id,
+                    exc_info=True,
+                )
                 self.disconnect(connection, conversation_id)

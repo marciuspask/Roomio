@@ -1,27 +1,15 @@
 from datetime import date
 
 import structlog
-from fastapi import HTTPException, status
 
 from common.database.unit_of_work import UnitOfWorkFactory
-from models import AuthMethod, TenantContext, TenantType, UserRole
+from auth.dependencies import get_anonymous_context
+from models import TenantContext
 from profile.database.unit_of_work import ProfileUnitOfWork
 from profile.errors import ProfileError
 from profile.models import Profile, ProfileSystemUpdate, ProfileUpdate
 
 logger = structlog.get_logger(__name__)
-
-# Sentinel for public (unauthenticated) UoW — tenant_id is never used in public reads.
-_ANON_CONTEXT = TenantContext(
-    tenant_id="",
-    tenant_type=TenantType.USER,
-    user_id="",
-    username="",
-    email=None,
-    role=UserRole.USER,
-    auth_method=AuthMethod.BEARER,
-    is_admin=False,
-)
 
 
 class ProfileService:
@@ -59,10 +47,7 @@ class ProfileService:
                 today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
             )
             if computed_age < 18:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="You must be 18 or older to use Roomio",
-                )
+                raise ProfileError.underage()
             system_update = ProfileSystemUpdate(age=computed_age)
 
         async with self._uow_factory.create(
@@ -85,7 +70,7 @@ class ProfileService:
     async def get_public_profile(self, user_id: str) -> Profile:
         """Fetch any user's profile by their tenant_id. No auth required."""
         async with self._uow_factory.create(
-            ProfileUnitOfWork, _ANON_CONTEXT,
+            ProfileUnitOfWork, get_anonymous_context(),
         ) as uow:
             profile = await uow.profile.get_by_tenant_id(user_id)
             if profile is None:
