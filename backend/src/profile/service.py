@@ -7,7 +7,7 @@ from common.database.unit_of_work import UnitOfWorkFactory
 from models import AuthMethod, TenantContext, TenantType, UserRole
 from profile.database.unit_of_work import ProfileUnitOfWork
 from profile.errors import ProfileError
-from profile.models import Profile, ProfileUpdate
+from profile.models import Profile, ProfileSystemUpdate, ProfileUpdate
 
 logger = structlog.get_logger(__name__)
 
@@ -47,10 +47,11 @@ class ProfileService:
             )
             return await uow.profile.create_profile(
                 ProfileUpdate(display_name=self._tenant_context.username),
-                email=self._tenant_context.email,
+                system_data=ProfileSystemUpdate(email=self._tenant_context.email),
             )
 
     async def update_profile(self, data: ProfileUpdate) -> Profile:
+        system_update: ProfileSystemUpdate | None = None
         if data.date_of_birth is not None:
             today = date.today()
             dob = data.date_of_birth
@@ -62,7 +63,7 @@ class ProfileService:
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="You must be 18 or older to use Roomio",
                 )
-            data = data.model_copy(update={"age": computed_age})
+            system_update = ProfileSystemUpdate(age=computed_age)
 
         async with self._uow_factory.create(
             ProfileUnitOfWork, self._tenant_context,
@@ -71,7 +72,7 @@ class ProfileService:
             if existing is None:
                 raise ProfileError.not_found(self._tenant_context.tenant_id)
 
-            updated = await uow.profile.update_profile(existing.id, data)
+            updated = await uow.profile.update_profile(existing.id, data, system_update)
             if updated is None:
                 raise ProfileError.update_failed(self._tenant_context.tenant_id)
 

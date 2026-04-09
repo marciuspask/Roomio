@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from common.database.repository import TenantRepository
 from models import TenantContext
 from profile.database.orm_models import ProfileORM
-from profile.models import Profile, ProfileUpdate
+from profile.models import Profile, ProfileSystemUpdate, ProfileUpdate
 
 
 class ProfileRepository(TenantRepository[ProfileORM, Profile]):
@@ -27,15 +27,16 @@ class ProfileRepository(TenantRepository[ProfileORM, Profile]):
     async def create_profile(
         self,
         data: ProfileUpdate,
-        email: str | None = None,
+        system_data: ProfileSystemUpdate | None = None,
     ) -> Profile:
         """Create a profile. tenant_id is auto-injected by TenantRepository.
-        email is passed separately because it comes from Clerk, not the form.
+        system_data carries Clerk-synced fields (email, image_url, etc.) that
+        the user cannot supply directly.
         """
         extra: dict[str, object] = {}
-        if email is not None:
-            extra["email"] = email
-        return await self._create(data, extra_fields=extra)
+        if system_data is not None:
+            extra.update(system_data.model_dump(exclude_none=True))
+        return await self._create(data, extra_fields=extra or None)
 
     async def get_by_tenant_id(self, tenant_id: str) -> Profile | None:
         """Get any profile by tenant_id — no ownership check, for public access."""
@@ -62,6 +63,15 @@ class ProfileRepository(TenantRepository[ProfileORM, Profile]):
         self,
         profile_id: str,
         data: ProfileUpdate,
+        system_data: ProfileSystemUpdate | None = None,
     ) -> Profile | None:
         """Update a profile by ID. Returns None if not found or not owned by tenant."""
-        return await self._update(profile_id, data)
+        entity = await self.session.get(ProfileORM, profile_id)
+        if entity is None or entity.tenant_id != self._tenant_id:
+            return None
+        self._converter.apply_update(entity, data)
+        if system_data is not None:
+            self._converter.apply_update(entity, system_data)
+        await self.session.flush()
+        await self.session.refresh(entity)
+        return self.to_model(entity)

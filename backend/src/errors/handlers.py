@@ -71,11 +71,6 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         content=ErrorResponse(
             detail="An unexpected error occurred",
             error_code="INTERNAL_SERVER_ERROR",
-            context={
-                "error": str(exc),
-                "error_type": type(exc).__name__,
-                "path": str(request.url.path),
-                "method": request.method,
-            },
+            context={},
         ).model_dump(),
     )

@@ -41,16 +41,20 @@ class ProfileUpdate(BaseModel):
         description="Short description the user writes about themselves",
     )
     occupation: Occupation | None = Field(default=None, description="User's employment status")
-    email: str | None = Field(default=None, description="User's email address")
+    date_of_birth: date | None = Field(default=None, description="User's date of birth")
+
+
+class ProfileSystemUpdate(BaseModel):
+    """For internal/system-driven updates — fields the user cannot set directly."""
+    email: str | None = Field(default=None, description="User's email address synced from Clerk")
     is_email_verified: bool | None = Field(
-        default=None, description="Whether the user's email has been verified"
+        default=None, description="Whether the user's email has been verified (from Clerk)"
     )
     is_phone_verified: bool | None = Field(
-        default=None, description="Whether the user's phone number has been verified"
+        default=None, description="Whether the user's phone number has been verified (from Clerk)"
     )
-    image_url: str | None = Field(default=None, description="Profile photo URL from Clerk")
-    date_of_birth: date | None = Field(default=None, description="User's date of birth")
-    age: int | None = Field(default=None, description="User's age (server-computed)")
+    image_url: str | None = Field(default=None, description="Profile photo URL synced from Clerk")
+    age: int | None = Field(default=None, description="User's age, computed from date_of_birth")
 
 
 class ProfileResponse(BaseModel):
