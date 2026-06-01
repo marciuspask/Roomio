@@ -13,7 +13,6 @@ import { ListingType, GenderPref, ListingStatus } from "@/api/generated/data-con
 import type { Listing } from "@/api/generated/data-contracts";
 import { Home, Search, Lock } from "lucide-react";
 import PhotoUpload from "@/components/PhotoUpload";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 const CreateListing = () => {
   const { isSignedIn } = useAuth();
@@ -43,8 +42,6 @@ const CreateListing = () => {
   const [utilitiesIncl, setUtilitiesIncl] = useState(false);
 
   const [streetAddress, setStreetAddress] = useState("");
-  const [addressSelected, setAddressSelected] = useState(false);
-  const [addressError, setAddressError] = useState("");
 
   // Step 2
   const [description, setDescription] = useState("");
@@ -69,9 +66,7 @@ const CreateListing = () => {
       const isOther = existingDistrict !== "" && !predefined.includes(existingDistrict);
       setDistrict(existingDistrict);
       setDistrictOther(isOther);
-      const addr = existing.street_address ?? "";
-      setStreetAddress(addr);
-      if (addr) setAddressSelected(true);
+      setStreetAddress(existing.street_address ?? "");
       setPrice(String(existing.price));
       setUtilitiesIncl(existing.utilities_incl);
       setDescription(existing.description);
@@ -264,31 +259,13 @@ const CreateListing = () => {
               />
             )}
             <div>
-              <AddressAutocomplete
+              <input
+                type="text"
+                placeholder="Street address (optional)"
                 value={streetAddress}
-                onChange={(val) => {
-                  setStreetAddress(val);
-                  setAddressSelected(false);
-                  setAddressError("");
-                }}
-                onPlaceSelect={({ address, district, city }) => {
-                  setStreetAddress(address);
-                  setAddressSelected(true);
-                  setAddressError("");
-                  if (city) setCity(city);
-                  if (district) {
-                    const predefined = DISTRICTS[city] ?? [];
-                    setDistrict(district);
-                    setDistrictOther(!predefined.includes(district));
-                  }
-                }}
-                className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary bg-background ${
-                  addressError ? "border-destructive focus:border-destructive" : "border-border focus:border-primary"
-                }`}
+                onChange={e => setStreetAddress(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
               />
-              {addressError && (
-                <p className="mt-1 text-xs text-destructive">{addressError}</p>
-              )}
               <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-surface-elevated px-3 py-2">
                 <Lock size={12} className="mt-0.5 shrink-0 text-muted-foreground" />
                 <p className="text-xs text-muted-foreground">
@@ -307,13 +284,7 @@ const CreateListing = () => {
               Utilities included in price
             </label>
             <button
-              onClick={() => {
-                if (!addressSelected) {
-                  setAddressError("Please select an address from the suggestions");
-                  return;
-                }
-                setStep(1);
-              }}
+              onClick={() => setStep(1)}
               disabled={!listingType || !title || !city || !price}
               className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
