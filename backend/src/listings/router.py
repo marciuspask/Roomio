@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from di import ListingsServiceDep, PublicListingsServiceDep
 from listings.models import ListingCreate, ListingResponse, ListingsResponse, ListingUpdate
@@ -7,15 +7,19 @@ router = APIRouter(prefix="/api/v1/listings", tags=["listings"])
 
 
 @router.get("/", response_model=ListingsResponse)
-async def get_all_listings(service: PublicListingsServiceDep) -> ListingsResponse:
-    listings = await service.get_all_listings()
-    return ListingsResponse(data=listings)
+async def get_all_listings(
+    service: PublicListingsServiceDep,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> ListingsResponse:
+    listings, total = await service.get_all_listings(limit=limit, offset=offset)
+    return ListingsResponse(data=listings, total=total, limit=limit, offset=offset)
 
 
 @router.get("/my", response_model=ListingsResponse)
 async def get_my_listings(service: ListingsServiceDep) -> ListingsResponse:
     listings = await service.get_my_listings()
-    return ListingsResponse(data=listings)
+    return ListingsResponse(data=listings, total=len(listings), limit=len(listings), offset=0)
 
 
 @router.get("/{listing_id}", response_model=ListingResponse)

@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common.database.repository import TenantRepository
@@ -22,15 +22,23 @@ class ListingsRepository(TenantRepository[ListingORM, Listing]):
             return None
         return self.to_model(entity)
 
-    async def get_all_active(self) -> list[Listing]:
+    async def get_all_active(self, *, limit: int = 20, offset: int = 0) -> list[Listing]:
         """Get all active listings across all tenants — public, no tenant filter."""
         stmt = (
             select(ListingORM)
             .where(ListingORM.status == "active")
             .where(ListingORM.tenant_type == "user")
+            .order_by(ListingORM.created_at.desc())
+            .limit(limit)
+            .offset(offset)
         )
         result = await self.session.execute(stmt)
         return self.to_model_list(list(result.scalars().all()))
+
+    async def count_active(self) -> int:
+        stmt = select(func.count()).where(ListingORM.status == "active")
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     async def get_titles_bulk(self, listing_ids: list[str]) -> dict[str, str]:
         """Return title keyed by listing_id for a set of IDs in one query."""

@@ -26,6 +26,7 @@ export enum Theme {
 /** TenantType */
 export enum TenantType {
   User = "user",
+  Anonymous = "anonymous",
 }
 
 /** Occupation */
@@ -72,6 +73,7 @@ export enum ConversationStatus {
 /** AuthMethod */
 export enum AuthMethod {
   Bearer = "bearer",
+  Anonymous = "anonymous",
 }
 
 /** AdminTestData */
@@ -168,6 +170,21 @@ export interface ConversationsResponse {
    * List of conversations
    */
   data: Conversation[];
+  /**
+   * Total
+   * Total number of conversations for this user
+   */
+  total: number;
+  /**
+   * Limit
+   * Maximum number of conversations returned
+   */
+  limit: number;
+  /**
+   * Offset
+   * Number of conversations skipped
+   */
+  offset: number;
 }
 
 /** GeocodeResult */
@@ -477,6 +494,21 @@ export interface ListingsResponse {
    * List of listing entities
    */
   data: Listing[];
+  /**
+   * Total
+   * Total number of active listings
+   */
+  total: number;
+  /**
+   * Limit
+   * Maximum number of listings returned
+   */
+  limit: number;
+  /**
+   * Offset
+   * Number of listings skipped
+   */
+  offset: number;
 }
 
 /** MeData */
@@ -573,6 +605,31 @@ export interface MessagesResponse {
    * List of messages in the conversation
    */
   data: Message[];
+  /**
+   * Total
+   * Total number of messages in the conversation
+   */
+  total: number;
+  /**
+   * Limit
+   * Maximum number of messages returned
+   */
+  limit: number;
+  /**
+   * Offset
+   * Number of messages skipped
+   */
+  offset: number;
+}
+
+/** MigrateAnonymousRequest */
+export interface MigrateAnonymousRequest {
+  /**
+   * Anonymous Id
+   * The anonymous UID from localStorage (e.g. anon-<uuid>)
+   * @minLength 1
+   */
+  anonymous_id: string;
 }
 
 /** Profile */
@@ -667,35 +724,10 @@ export interface ProfileUpdate {
   /** User's employment status */
   occupation?: Occupation | null;
   /**
-   * Email
-   * User's email address
-   */
-  email?: string | null;
-  /**
-   * Is Email Verified
-   * Whether the user's email has been verified
-   */
-  is_email_verified?: boolean | null;
-  /**
-   * Is Phone Verified
-   * Whether the user's phone number has been verified
-   */
-  is_phone_verified?: boolean | null;
-  /**
-   * Image Url
-   * Profile photo URL from Clerk
-   */
-  image_url?: string | null;
-  /**
    * Date Of Birth
    * User's date of birth
    */
   date_of_birth?: string | null;
-  /**
-   * Age
-   * User's age (server-computed)
-   */
-  age?: number | null;
 }
 
 /** SavedListingsResponse */

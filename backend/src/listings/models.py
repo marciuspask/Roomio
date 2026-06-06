@@ -106,3 +106,6 @@ class ListingResponse(BaseModel):
 
 class ListingsResponse(BaseModel):
     data: list[Listing] = Field(description="List of listing entities")
+    total: int = Field(description="Total number of active listings")
+    limit: int = Field(description="Maximum number of listings returned")
+    offset: int = Field(description="Number of listings skipped")

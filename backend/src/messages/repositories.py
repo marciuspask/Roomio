@@ -19,14 +19,26 @@ class ConversationRepository(BaseRepository[ConversationORM, Conversation]):
             return None
         return self.to_model(entity)
 
-    async def get_for_participant(self, tenant_id: str) -> list[Conversation]:
+    async def get_for_participant(
+        self, tenant_id: str, *, limit: int = 20, offset: int = 0
+    ) -> list[Conversation]:
         stmt = (
             select(ConversationORM)
             .where(ConversationORM.participant_ids.contains([tenant_id]))
             .order_by(ConversationORM.updated_at.desc())
+            .limit(limit)
+            .offset(offset)
         )
         result = await self.session.execute(stmt)
         return self.to_model_list(list(result.scalars().all()))
+
+    async def count_conversations(self, tenant_id: str) -> int:
+        stmt = (
+            select(func.count())
+            .where(ConversationORM.participant_ids.contains([tenant_id]))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     async def get_between_participants(
         self,
@@ -74,14 +86,26 @@ class MessageRepository(BaseRepository[MessageORM, Message]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, MessageORM, Message)
 
-    async def get_for_conversation(self, conversation_id: str) -> list[Message]:
+    async def get_for_conversation(
+        self, conversation_id: str, *, limit: int = 50, offset: int = 0
+    ) -> list[Message]:
         stmt = (
             select(MessageORM)
             .where(MessageORM.conversation_id == conversation_id)
             .order_by(MessageORM.created_at.asc())
+            .limit(limit)
+            .offset(offset)
         )
         result = await self.session.execute(stmt)
         return self.to_model_list(list(result.scalars().all()))
+
+    async def count_messages(self, conversation_id: str) -> int:
+        stmt = (
+            select(func.count())
+            .where(MessageORM.conversation_id == conversation_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     async def get_last_messages_bulk(
         self, conversation_ids: list[str],

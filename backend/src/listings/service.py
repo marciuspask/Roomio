@@ -1,12 +1,12 @@
-import structlog
 from contextlib import AbstractAsyncContextManager
 
-from auth.dependencies import AuthError
+import structlog
+
+from auth.dependencies import AuthError, get_anonymous_context
 from common.database.unit_of_work import UnitOfWorkFactory
 from listings.database.unit_of_work import ListingsUnitOfWork
 from listings.errors import ListingError
 from listings.models import Listing, ListingCreate, ListingUpdate
-from auth.dependencies import get_anonymous_context
 from models import TenantContext
 from profile.models import Profile
 
@@ -27,7 +27,9 @@ class ListingsService:
             raise AuthError.missing_token()
         return self._tenant_context
 
-    def _uow(self, tenant_context: TenantContext | None = None) -> AbstractAsyncContextManager[ListingsUnitOfWork]:
+    def _uow(
+        self, tenant_context: TenantContext | None = None
+    ) -> AbstractAsyncContextManager[ListingsUnitOfWork]:
         return self._uow_factory.create(
             ListingsUnitOfWork,
             tenant_context or self._tenant_context or get_anonymous_context(),
@@ -53,14 +55,15 @@ class ListingsService:
 
     # -- Public methods (no auth required) ------------------------------------
 
-    async def get_all_listings(self) -> list[Listing]:
+    async def get_all_listings(self, limit: int = 20, offset: int = 0) -> tuple[list[Listing], int]:
         """Return all active listings across all tenants."""
         async with self._uow() as uow:
-            listings = await uow.listings.get_all_active()
-            tenant_ids = list({l.tenant_id for l in listings})
+            listings = await uow.listings.get_all_active(limit=limit, offset=offset)
+            total = await uow.listings.count_active()
+            tenant_ids = list({listing.tenant_id for listing in listings})
             profiles = await uow.profiles.get_by_tenant_ids_bulk(tenant_ids)
         profiles_map = {p.tenant_id: p for p in profiles}
-        return [self._enrich(self._redact(l), profiles_map) for l in listings]
+        return ([self._enrich(self._redact(listing), profiles_map) for listing in listings], total)
 
     async def get_listing(self, listing_id: str) -> Listing:
         """Return a single listing by ID, visible to anyone."""

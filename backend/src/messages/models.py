@@ -58,7 +58,13 @@ class ConversationResponse(BaseModel):
 
 class ConversationsResponse(BaseModel):
     data: list[Conversation] = Field(description="List of conversations")
+    total: int = Field(description="Total number of conversations for this user")
+    limit: int = Field(description="Maximum number of conversations returned")
+    offset: int = Field(description="Number of conversations skipped")
 
 
 class MessagesResponse(BaseModel):
     data: list[Message] = Field(description="List of messages in the conversation")
+    total: int = Field(description="Total number of messages in the conversation")
+    limit: int = Field(description="Maximum number of messages returned")
+    offset: int = Field(description="Number of messages skipped")

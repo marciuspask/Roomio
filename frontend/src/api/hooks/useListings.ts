@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/api/client";
 
-export function useListings() {
+export function useListings(limit = 20, offset = 0) {
   return useQuery({
-    queryKey: ["listings"],
+    queryKey: ["listings", limit, offset],
     queryFn: () =>
-      apiClient.getAllListingsApiV1ListingsGet().then((res) => res.data),
+      apiClient
+        .getAllListingsApiV1ListingsGet({ limit, offset })
+        .then((res) => res.data),
   });
 }

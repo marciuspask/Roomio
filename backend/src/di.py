@@ -1,13 +1,18 @@
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends, Request, WebSocket
 
-from auth.dependencies import TenantResolver, get_anonymous_context, get_tenant_context_from_header, require_admin
+from auth.dependencies import (
+    TenantResolver,
+    get_anonymous_context,
+    get_tenant_context_from_header,
+    require_admin,
+)
 from common.database.unit_of_work import UnitOfWorkFactory
 from listings.service import ListingsService
 from messages.service import MessagesService
-from migration.service import MigrationService
 from messages.websocket import ConnectionManager
+from migration.service import MigrationService
 from models import TenantContext
 from profile.service import ProfileService
 from saved.service import SavedListingsService
@@ -68,15 +73,17 @@ PublicListingsServiceDep = Annotated[ListingsService, Depends(get_public_listing
 
 # -- WebSocket helpers --------------------------------------------------------
 
-def get_tenant_resolver(request: Request) -> TenantResolver:
+def get_tenant_resolver(request: Request | WebSocket) -> TenantResolver:
     return request.app.state.tenant_resolver  # type: ignore[no-any-return]
 
 
-def get_connection_manager(request: Request) -> ConnectionManager:
+def get_connection_manager(request: Request | WebSocket) -> ConnectionManager:
     return request.app.state.ws_manager  # type: ignore[no-any-return]
 
 
-def get_ws_messages_service(request: Request, tenant: TenantContext) -> MessagesService:
+def get_ws_messages_service(
+    request: Request | WebSocket, tenant: TenantContext
+) -> MessagesService:
     """Build MessagesService for WebSocket handlers. Same wiring as HTTP."""
     session_maker = request.app.state.session_maker
     uow_factory = UnitOfWorkFactory(session_maker)

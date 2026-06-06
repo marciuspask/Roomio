@@ -24,6 +24,7 @@ import {
   MessageCreate,
   MessageResponse,
   MessagesResponse,
+  MigrateAnonymousRequest,
   ProfileResponse,
   ProfileUpdate,
   SavedListingsResponse,
@@ -186,10 +187,28 @@ export class Api<
    * @summary Get All Listings
    * @request GET:/api/v1/listings/
    */
-  getAllListingsApiV1ListingsGet = (params: RequestParams = {}) =>
-    this.request<ListingsResponse, any>({
+  getAllListingsApiV1ListingsGet = (
+    query?: {
+      /**
+       * Limit
+       * @min 1
+       * @max 100
+       * @default 20
+       */
+      limit?: number;
+      /**
+       * Offset
+       * @min 0
+       * @default 0
+       */
+      offset?: number;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<ListingsResponse, HTTPValidationError>({
       path: `/api/v1/listings/`,
       method: "GET",
+      query: query,
       format: "json",
       ...params,
     });
@@ -285,6 +304,25 @@ export class Api<
       ...params,
     });
   /**
+   * @description One-time call after Clerk signup to claim pre-registration data.
+   *
+   * @tags migration
+   * @name MigrateAnonymousApiV1MigrateAnonymousPost
+   * @summary Migrate Anonymous
+   * @request POST:/api/v1/migrate-anonymous
+   */
+  migrateAnonymousApiV1MigrateAnonymousPost = (
+    data: MigrateAnonymousRequest,
+    params: RequestParams = {},
+  ) =>
+    this.request<void, HTTPValidationError>({
+      path: `/api/v1/migrate-anonymous`,
+      method: "POST",
+      body: data,
+      type: ContentType.Json,
+      ...params,
+    });
+  /**
    * No description
    *
    * @tags messages
@@ -292,10 +330,28 @@ export class Api<
    * @summary Get My Conversations
    * @request GET:/api/v1/conversations/
    */
-  getMyConversationsApiV1ConversationsGet = (params: RequestParams = {}) =>
+  getMyConversationsApiV1ConversationsGet = (
+    query?: {
+      /**
+       * Limit
+       * @min 1
+       * @max 100
+       * @default 20
+       */
+      limit?: number;
+      /**
+       * Offset
+       * @min 0
+       * @default 0
+       */
+      offset?: number;
+    },
+    params: RequestParams = {},
+  ) =>
     this.request<ConversationsResponse, HTTPValidationError>({
       path: `/api/v1/conversations/`,
       method: "GET",
+      query: query,
       format: "json",
       ...params,
     });
@@ -327,11 +383,27 @@ export class Api<
    */
   getMessagesApiV1ConversationsConversationIdMessagesGet = (
     conversationId: string,
+    query?: {
+      /**
+       * Limit
+       * @min 1
+       * @max 200
+       * @default 50
+       */
+      limit?: number;
+      /**
+       * Offset
+       * @min 0
+       * @default 0
+       */
+      offset?: number;
+    },
     params: RequestParams = {},
   ) =>
     this.request<MessagesResponse, HTTPValidationError>({
       path: `/api/v1/conversations/${conversationId}/messages`,
       method: "GET",
+      query: query,
       format: "json",
       ...params,
     });

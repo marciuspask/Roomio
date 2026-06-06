@@ -4,7 +4,12 @@ import structlog
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
 
 from auth.dependencies import AuthError
-from di import MessagesServiceDep, get_connection_manager, get_tenant_resolver, get_ws_messages_service
+from di import (
+    MessagesServiceDep,
+    get_connection_manager,
+    get_tenant_resolver,
+    get_ws_messages_service,
+)
 from messages.errors import MessageError, WsCloseCode
 from messages.models import (
     ConversationResponse,
@@ -21,9 +26,13 @@ listings_router = APIRouter(prefix="/api/v1/listings", tags=["messages"])
 
 
 @router.get("/api/v1/conversations/", response_model=ConversationsResponse)
-async def get_my_conversations(service: MessagesServiceDep) -> ConversationsResponse:
-    result = await service.get_my_conversations()
-    return ConversationsResponse(data=result)
+async def get_my_conversations(
+    service: MessagesServiceDep,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> ConversationsResponse:
+    conversations, total = await service.get_my_conversations(limit=limit, offset=offset)
+    return ConversationsResponse(data=conversations, total=total, limit=limit, offset=offset)
 
 
 @router.get("/api/v1/conversations/{conversation_id}", response_model=ConversationResponse)
@@ -42,13 +51,16 @@ async def get_conversation(
 async def get_messages(
     conversation_id: str,
     service: MessagesServiceDep,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
 ) -> MessagesResponse:
-    result = await service.get_messages(conversation_id)
-    return MessagesResponse(data=result)
+    messages, total = await service.get_messages(conversation_id, limit=limit, offset=offset)
+    return MessagesResponse(data=messages, total=total, limit=limit, offset=offset)
 
 
 @router.post(
     "/api/v1/conversations/{conversation_id}/read",
+    response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def mark_as_read(

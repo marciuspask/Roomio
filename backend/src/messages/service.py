@@ -1,5 +1,6 @@
-import structlog
 from contextlib import AbstractAsyncContextManager
+
+import structlog
 
 from common.database.unit_of_work import UnitOfWorkFactory
 from messages.database.unit_of_work import MessagesUnitOfWork
@@ -43,7 +44,9 @@ class MessagesService:
             image_urls: dict[str, str | None] = {}
             for pid in conv.participant_ids:
                 p = profiles_map.get(pid)
-                display_names[pid] = p.display_name if p and p.display_name else f"User \u2026{pid[-6:]}"
+                display_names[pid] = (
+                    p.display_name if p and p.display_name else f"User \u2026{pid[-6:]}"
+                )
                 ages[pid] = p.age if p else None
                 image_urls[pid] = p.image_url if p else None
             enriched.append(conv.model_copy(update={
@@ -57,10 +60,15 @@ class MessagesService:
     def _is_participant(self, conversation: Conversation) -> bool:
         return self._tenant_context.tenant_id in conversation.participant_ids
 
-    async def get_my_conversations(self) -> list[Conversation]:
+    async def get_my_conversations(
+        self, limit: int = 20, offset: int = 0
+    ) -> tuple[list[Conversation], int]:
         tenant_id = self._tenant_context.tenant_id
         async with self._uow() as uow:
-            conversations = await uow.conversations.get_for_participant(tenant_id)
+            conversations = await uow.conversations.get_for_participant(
+                tenant_id, limit=limit, offset=offset
+            )
+            total = await uow.conversations.count_conversations(tenant_id)
             conv_ids = [c.id for c in conversations]
             last_messages = await uow.messages.get_last_messages_bulk(conv_ids)
             unread_counts = await uow.messages.get_unread_counts_bulk(conv_ids, tenant_id)
@@ -71,7 +79,8 @@ class MessagesService:
                 })
                 for conv in conversations
             ]
-            return await self._enrich_conversations(uow, base)
+            enriched = await self._enrich_conversations(uow, base)
+        return (enriched, total)
 
     async def get_conversation(self, conversation_id: str) -> Conversation:
         async with self._uow() as uow:
@@ -85,14 +94,20 @@ class MessagesService:
             enriched = await self._enrich_conversations(uow, [base])
         return enriched[0]
 
-    async def get_messages(self, conversation_id: str) -> list[Message]:
+    async def get_messages(
+        self, conversation_id: str, limit: int = 50, offset: int = 0
+    ) -> tuple[list[Message], int]:
         async with self._uow() as uow:
             conv = await uow.conversations.get_by_id(conversation_id)
             if conv is None:
                 raise MessageError.not_found(conversation_id)
             if not self._is_participant(conv):
                 raise MessageError.forbidden(conversation_id)
-            return await uow.messages.get_for_conversation(conversation_id)
+            messages = await uow.messages.get_for_conversation(
+                conversation_id, limit=limit, offset=offset
+            )
+            total = await uow.messages.count_messages(conversation_id)
+        return (messages, total)
 
     async def start_conversation(
         self,
