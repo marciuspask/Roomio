@@ -24,7 +24,9 @@ class Conversation(BaseModel):
 
     id: str = Field(description="Unique conversation identifier (UUID)")
     listing_id: str = Field(description="Identifier of the listing this conversation is about")
-    participant_ids: list[str] = Field(description="Tenant IDs of both participants")
+    participant_ids: list[str] = Field(
+        default_factory=list, description="Tenant IDs of participants",
+    )
     status: ConversationStatus = Field(description="Current status of the conversation")
     last_message: Message | None = Field(default=None, description="Most recent message")
     unread_count: int = Field(default=0, description="Unread message count for the requesting user")
@@ -42,6 +44,16 @@ class Conversation(BaseModel):
     )
     created_at: datetime = Field(description="Timestamp when the conversation was created")
     updated_at: datetime = Field(description="Timestamp when the conversation was last updated")
+
+
+class Participant(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    tenant_id: str
+    role: str
+    last_read_at: datetime | None = None
+    is_muted: bool = False
+    is_archived: bool = False
 
 
 class MessageCreate(BaseModel):

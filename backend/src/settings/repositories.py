@@ -12,16 +12,7 @@ class SettingsRepository(TenantRepository[SettingsORM, Settings]):
         super().__init__(session, SettingsORM, Settings, tenant_context)
 
     async def create_settings(self, data: SettingsUpdate) -> Settings:
-        """Create settings, letting ORM column defaults fill in any unset fields."""
-        # exclude_none so that ORM column defaults (default=) kick in for unset fields
-        fields = {k: v for k, v in data.model_dump().items() if v is not None}
-        fields["tenant_id"] = self._tenant_id
-        fields["tenant_type"] = self._tenant_type
-        entity = SettingsORM(**fields)
-        self.session.add(entity)
-        await self.session.flush()
-        await self.session.refresh(entity)
-        return self.to_model(entity)
+        return await self._create(data)
 
     async def update_settings(self, settings_id: str, data: SettingsUpdate) -> Settings | None:
         return await self._update(settings_id, data)

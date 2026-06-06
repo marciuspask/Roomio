@@ -82,6 +82,18 @@ const Dashboard = () => {
   // Messages state
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
   const [newMsg, setNewMsg] = useState("");
+  const manuallyDeselected = useRef(false);
+
+  // Auto-open newest conversation when entering the messages tab
+  useEffect(() => {
+    if (activeTab !== "messages") {
+      manuallyDeselected.current = false;
+      return;
+    }
+    if (!selectedConvo && conversations.length > 0 && !manuallyDeselected.current) {
+      setSelectedConvo(conversations[0].id);
+    }
+  }, [activeTab, conversations, selectedConvo]);
 
   const { data: messagesData, isLoading: messagesLoading } = useConversationMessages(selectedConvo ?? "");
   const messages = messagesData?.data ?? [];
@@ -504,7 +516,7 @@ const Dashboard = () => {
               {selectedConversation ? (
                 <div className={`${selectedConvo ? "flex" : "hidden md:flex"} flex-1 flex-col rounded-xl border border-border bg-card`}>
                   <div className="flex items-center gap-3 border-b border-border p-4">
-                    <button onClick={() => setSelectedConvo(null)} className="md:hidden"><ArrowLeft size={18} /></button>
+                    <button onClick={() => { manuallyDeselected.current = true; setSelectedConvo(null); }} className="md:hidden"><ArrowLeft size={18} /></button>
                     {(() => {
                       const { displayName, avatarUrl } = getParticipantInfo(selectedConversation, clerkUserId);
                       return (

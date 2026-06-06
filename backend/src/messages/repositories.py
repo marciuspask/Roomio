@@ -1,11 +1,12 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from common.database.repository import BaseRepository
-from messages.database.orm_models import ConversationORM, MessageORM
+from messages.database.orm_models import ConversationORM, ConversationParticipantORM, MessageORM
 from messages.models import Conversation, Message
 
 
@@ -19,12 +20,14 @@ class ConversationRepository(BaseRepository[ConversationORM, Conversation]):
             return None
         return self.to_model(entity)
 
-    async def get_for_participant(
-        self, tenant_id: str, *, limit: int = 20, offset: int = 0
+    async def get_by_ids(
+        self, conversation_ids: list[str], *, limit: int = 20, offset: int = 0
     ) -> list[Conversation]:
+        if not conversation_ids:
+            return []
         stmt = (
             select(ConversationORM)
-            .where(ConversationORM.participant_ids.contains([tenant_id]))
+            .where(ConversationORM.id.in_(conversation_ids))
             .order_by(ConversationORM.updated_at.desc())
             .limit(limit)
             .offset(offset)
@@ -32,25 +35,21 @@ class ConversationRepository(BaseRepository[ConversationORM, Conversation]):
         result = await self.session.execute(stmt)
         return self.to_model_list(list(result.scalars().all()))
 
-    async def count_conversations(self, tenant_id: str) -> int:
-        stmt = (
-            select(func.count())
-            .where(ConversationORM.participant_ids.contains([tenant_id]))
-        )
-        result = await self.session.execute(stmt)
-        return result.scalar_one()
-
     async def get_between_participants(
         self,
         tenant_id_1: str,
         tenant_id_2: str,
         listing_id: str,
     ) -> Conversation | None:
+        cp1 = aliased(ConversationParticipantORM)
+        cp2 = aliased(ConversationParticipantORM)
         stmt = (
             select(ConversationORM)
+            .join(cp1, cp1.conversation_id == ConversationORM.id)
+            .join(cp2, cp2.conversation_id == ConversationORM.id)
             .where(ConversationORM.listing_id == listing_id)
-            .where(ConversationORM.participant_ids.contains([tenant_id_1]))
-            .where(ConversationORM.participant_ids.contains([tenant_id_2]))
+            .where(cp1.tenant_id == tenant_id_1)
+            .where(cp2.tenant_id == tenant_id_2)
             .limit(1)
         )
         result = await self.session.execute(stmt)
@@ -59,15 +58,10 @@ class ConversationRepository(BaseRepository[ConversationORM, Conversation]):
             return None
         return self.to_model(entity)
 
-    async def create_conversation(
-        self,
-        listing_id: str,
-        participant_ids: list[str],
-    ) -> Conversation:
+    async def create_conversation(self, listing_id: str) -> Conversation:
         entity = ConversationORM(
             id=str(uuid.uuid4()),
             listing_id=listing_id,
-            participant_ids=participant_ids,
         )
         self.session.add(entity)
         await self.session.flush()
@@ -110,11 +104,7 @@ class MessageRepository(BaseRepository[MessageORM, Message]):
     async def get_last_messages_bulk(
         self, conversation_ids: list[str],
     ) -> dict[str, Message]:
-        """Return the most recent message per conversation in one query.
-
-        Uses a subquery to rank messages within each conversation, then
-        filters to rank = 1. One DB round-trip regardless of list size.
-        """
+        """Return the most recent message per conversation in one query."""
         if not conversation_ids:
             return {}
 
@@ -154,45 +144,31 @@ class MessageRepository(BaseRepository[MessageORM, Message]):
             return None
         return self.to_model(entity)
 
-    async def get_unread_count(self, conversation_id: str, reader_id: str) -> int:
-        """Count messages in a conversation not sent by reader_id that are unread."""
-        stmt = (
-            select(func.count())
-            .select_from(MessageORM)
-            .where(MessageORM.conversation_id == conversation_id)
-            .where(MessageORM.sender_id != reader_id)
-            .where(MessageORM.is_read.is_(False))
-        )
-        result = await self.session.execute(stmt)
-        return result.scalar_one()
-
     async def get_unread_counts_bulk(
         self, conversation_ids: list[str], reader_id: str,
     ) -> dict[str, int]:
-        """Return unread count per conversation in one query."""
+        """Return unread count per conversation using last_read_at from participants."""
         if not conversation_ids:
             return {}
         stmt = (
             select(MessageORM.conversation_id, func.count().label("cnt"))
+            .join(
+                ConversationParticipantORM,
+                (ConversationParticipantORM.conversation_id == MessageORM.conversation_id)
+                & (ConversationParticipantORM.tenant_id == reader_id),
+            )
             .where(MessageORM.conversation_id.in_(conversation_ids))
             .where(MessageORM.sender_id != reader_id)
-            .where(MessageORM.is_read.is_(False))
+            .where(
+                or_(
+                    ConversationParticipantORM.last_read_at.is_(None),
+                    MessageORM.created_at > ConversationParticipantORM.last_read_at,
+                )
+            )
             .group_by(MessageORM.conversation_id)
         )
         result = await self.session.execute(stmt)
         return {row.conversation_id: row.cnt for row in result.all()}
-
-    async def mark_as_read(self, conversation_id: str, reader_id: str) -> None:
-        """Mark all messages not sent by reader_id as read."""
-        stmt = (
-            update(MessageORM)
-            .where(MessageORM.conversation_id == conversation_id)
-            .where(MessageORM.sender_id != reader_id)
-            .where(MessageORM.is_read.is_(False))
-            .values(is_read=True)
-        )
-        await self.session.execute(stmt)
-        await self.session.flush()
 
     async def create_message(
         self,

@@ -36,19 +36,20 @@ export function useWebSocket(conversationId: string | null) {
     ws.onmessage = (event: MessageEvent<string>) => {
       try {
         const message = JSON.parse(event.data) as Message;
-        queryClient.setQueryData<MessagesResponse>(
-          ["messages", conversationId],
+        queryClient.setQueriesData<MessagesResponse>(
+          { queryKey: ["messages", conversationId] },
           (old) => {
-            if (!old) return { data: [message] };
+            if (!old) return { data: [message], total: 1, limit: 50, offset: 0 };
             if (old.data.some((m) => m.id === message.id)) return old;
-            return { data: [...old.data, message] };
+            return { ...old, data: [...old.data, message] };
           },
         );
-        queryClient.setQueryData<ConversationsResponse>(
-          ["conversations"],
+        queryClient.setQueriesData<ConversationsResponse>(
+          { queryKey: ["conversations"] },
           (old) => {
             if (!old) return old;
             return {
+              ...old,
               data: old.data.map((conv) =>
                 conv.id === conversationId
                   ? { ...conv, last_message: message }

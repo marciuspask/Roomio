@@ -18,7 +18,8 @@ const ListingDetail = () => {
   const listing = data?.data;
   const { data: posterData } = usePublicProfile(listing?.tenant_id ?? "");
   const poster = posterData?.data;
-  const { isSignedIn: isLoggedIn } = useAuth();
+  const { isSignedIn: isLoggedIn, userId } = useAuth();
+  const isOwnListing = !!listing && listing.tenant_id === userId;
   const { toast } = useToast();
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [messageState, setMessageState] = useState<"idle" | "composing" | "sent">("idle");
@@ -293,39 +294,48 @@ const ListingDetail = () => {
                 <span className="text-sm text-muted-foreground"> / month</span>
               </div>
 
-              {messageState === "idle" && (
-                <button
-                  onClick={handleContact}
-                  className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors"
-                >
-                  Send message
-                </button>
+              {!isOwnListing && (
+                <>
+                  {messageState === "idle" && (
+                    <button
+                      onClick={handleContact}
+                      className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors"
+                    >
+                      Send message
+                    </button>
+                  )}
+                  {messageState === "composing" && (
+                    <div className="space-y-3">
+                      <textarea
+                        value={messageText}
+                        onChange={e => setMessageText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSend();
+                          }
+                        }}
+                        placeholder="Write your message… (Enter to send, Shift+Enter for new line)"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                        rows={3}
+                      />
+                      <button
+                        onClick={handleSend}
+                        disabled={startingConversation}
+                        className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50"
+                      >
+                        {startingConversation ? "Sending…" : "Send"}
+                      </button>
+                    </div>
+                  )}
+                  {messageState === "sent" && (
+                    <div className="rounded-lg bg-success-bg p-3 text-center text-sm font-medium text-success">
+                      Message sent! ✓
+                    </div>
+                  )}
+                  <div className="my-4 border-t border-border" />
+                </>
               )}
-              {messageState === "composing" && (
-                <div className="space-y-3">
-                  <textarea
-                    value={messageText}
-                    onChange={e => setMessageText(e.target.value)}
-                    placeholder="Write your message..."
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
-                    rows={3}
-                  />
-                  <button
-                    onClick={handleSend}
-                    disabled={startingConversation}
-                    className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50"
-                  >
-                    {startingConversation ? "Sending…" : "Send"}
-                  </button>
-                </div>
-              )}
-              {messageState === "sent" && (
-                <div className="rounded-lg bg-success-bg p-3 text-center text-sm font-medium text-success">
-                  Message sent! ✓
-                </div>
-              )}
-
-              <div className="my-4 border-t border-border" />
 
               <button
                 onClick={handleToggleSave}

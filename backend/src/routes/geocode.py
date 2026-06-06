@@ -7,9 +7,6 @@ logger = structlog.get_logger(__name__)
 
 router = APIRouter(tags=["geocode"])
 
-# In-process cache: address string → {lat, lng}
-_cache: dict[str, "GeocodeResult"] = {}
-
 
 class GeocodeResult(BaseModel):
     lat: float
@@ -18,9 +15,6 @@ class GeocodeResult(BaseModel):
 
 @router.get("/api/v1/geocode", response_model=GeocodeResult)
 async def geocode(request: Request, address: str = Query(..., min_length=1)) -> GeocodeResult:
-    if address in _cache:
-        return _cache[address]
-
     api_key: str = request.app.state.config.google_maps_api_key
     if not api_key:
         raise HTTPException(status_code=503, detail="Geocoding not configured")
@@ -41,6 +35,4 @@ async def geocode(request: Request, address: str = Query(..., min_length=1)) -> 
         raise HTTPException(status_code=404, detail="Address not found")
 
     loc = data["results"][0]["geometry"]["location"]
-    result = GeocodeResult(lat=loc["lat"], lng=loc["lng"])
-    _cache[address] = result
-    return result
+    return GeocodeResult(lat=loc["lat"], lng=loc["lng"])
