@@ -92,7 +92,14 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://localhost:8080", "http://localhost:8082", "http://localhost:8083"],
+        allow_origins=[
+            "http://localhost:5173",
+            "http://localhost:8080",
+            "http://localhost:8082",
+            "http://localhost:8083",
+            "https://*.pages.dev",
+            "https://roomio-b0e.pages.dev",
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
