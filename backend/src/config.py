@@ -19,3 +19,6 @@ class Settings(BaseSettings):
     google_maps_api_key: str = Field(
         default="", description="Google Maps API key for server-side geocoding",
     )
+    twilio_account_sid: str = Field(default="", description="Twilio Account SID")
+    twilio_auth_token: str = Field(default="", description="Twilio Auth Token")
+    twilio_phone_number: str = Field(default="", description="Twilio sender phone number")

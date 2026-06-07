@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 # Import every ORM module so they register with Base.metadata before create_all
 import listings.database.orm_models  # noqa: F401
+import phone_verification.database.orm_models  # noqa: F401
 import messages.database.orm_models  # noqa: F401
 import profile.database.orm_models  # noqa: F401
 import saved.database.orm_models  # noqa: F401

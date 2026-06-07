@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends, Request, WebSocket
 
+from phone_verification.service import PhoneVerificationService
 from auth.dependencies import (
     TenantResolver,
     get_anonymous_context,
@@ -113,6 +114,18 @@ def get_saved_listings_service(request: Request, tenant: TenantDep) -> SavedList
 
 
 SavedListingsServiceDep = Annotated[SavedListingsService, Depends(get_saved_listings_service)]
+
+
+# -- Phone verification -------------------------------------------------------
+
+def get_phone_verification_service(request: Request, tenant: TenantDep) -> PhoneVerificationService:
+    session_maker = request.app.state.session_maker
+    uow_factory = UnitOfWorkFactory(session_maker)
+    config = request.app.state.config
+    return PhoneVerificationService(uow_factory=uow_factory, tenant_context=tenant, settings=config)
+
+
+PhoneVerificationServiceDep = Annotated[PhoneVerificationService, Depends(get_phone_verification_service)]
 
 
 # -- Migration ----------------------------------------------------------------

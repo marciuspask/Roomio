@@ -9,6 +9,7 @@ from fastapi.routing import APIRoute
 from pydantic import ValidationError
 
 import listings.database.orm_models  # noqa: F401 — registers ListingORM with Base.metadata
+import phone_verification.database.orm_models  # noqa: F401 — registers PhoneVerificationORM with Base.metadata
 import messages.database.orm_models  # noqa: F401 — registers ConversationORM/MessageORM with Base.metadata
 import profile.database.orm_models  # noqa: F401 — registers ProfileORM with Base.metadata
 import saved.database.orm_models  # noqa: F401 — registers SavedListingORM with Base.metadata
@@ -24,6 +25,7 @@ from errors.handlers import (
     request_validation_error_handler,
 )
 from listings.router import router as listings_router
+from phone_verification.router import router as phone_verification_router
 from migration.router import router as migration_router
 from logging_config import configure_logging
 from messages.router import listings_router as message_listings_router
@@ -121,6 +123,7 @@ def create_app() -> FastAPI:
     app.include_router(messages_router)
     app.include_router(message_listings_router)
     app.include_router(saved_router)
+    app.include_router(phone_verification_router)
 
     return app
 
