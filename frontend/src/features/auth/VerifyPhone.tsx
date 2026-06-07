@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8000";
@@ -16,6 +17,7 @@ const VerifyPhone = () => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const navigate = useNavigate();
   const { getToken } = useAuth();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -95,6 +97,7 @@ const VerifyPhone = () => {
         const data = await res.json();
         throw new Error(data.detail ?? "Invalid code");
       }
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
       setPhase("success");
       setTimeout(() => navigate("/dashboard"), 1500);
     } catch (e: unknown) {

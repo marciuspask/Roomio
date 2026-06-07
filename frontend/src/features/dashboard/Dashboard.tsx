@@ -253,16 +253,30 @@ const Dashboard = () => {
             <>
               <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">Good morning, {user?.firstName ?? "there"} 👋</h1>
 
-              {profile?.is_phone_verified === false && (
-                <div className="mb-6 rounded-xl border border-warning/30 bg-warning-bg p-4">
-                  <h3 className="mb-1 text-sm font-semibold text-warning">Your profile is incomplete</h3>
-                  <div className="mb-2 h-2 w-full rounded-full bg-warning/20">
-                    <div className="h-2 w-[65%] rounded-full bg-warning" />
+              {profile && (profile.is_email_verified && profile.is_phone_verified ? (
+                <div className="mb-6 rounded-xl border border-success/30 bg-success-bg p-4 flex items-center gap-3">
+                  <span className="text-xl">✓</span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-success">Account fully verified</h3>
+                    <p className="text-xs text-success/80">Email and phone number confirmed</p>
                   </div>
-                  <p className="mb-2 text-xs text-warning">✓ Email verified · ⚠ Phone not verified</p>
-                  <Link to="/verify-phone" className="text-xs font-medium text-primary">Verify phone →</Link>
                 </div>
-              )}
+              ) : (
+                <div className="mb-6 rounded-xl border border-warning/30 bg-warning-bg p-4">
+                  <h3 className="mb-2 text-sm font-semibold text-warning">Complete your profile</h3>
+                  <div className="mb-2 space-y-1">
+                    <p className="text-xs text-warning">
+                      {profile.is_email_verified ? "✓" : "○"} Email verified
+                    </p>
+                    <p className="text-xs text-warning">
+                      {profile.is_phone_verified ? "✓" : "○"} Phone verified
+                    </p>
+                  </div>
+                  {!profile.is_phone_verified && (
+                    <Link to="/verify-phone" className="text-xs font-medium text-primary">Verify phone →</Link>
+                  )}
+                </div>
+              ))}
 
               <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-2">
                 {[
@@ -675,19 +689,29 @@ const Dashboard = () => {
 
                   {/* Verification */}
                   <div className="rounded-xl border border-border bg-card p-4">
-                    <h3 className="mb-2 text-sm font-semibold text-foreground">Verification</h3>
-                    {profile?.is_email_verified ? (
-                      <p className="text-xs text-success">✓ Email verified</p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">✗ Email not verified</p>
-                    )}
-                    {profile?.is_phone_verified ? (
-                      <p className="text-xs text-success">✓ Phone verified</p>
-                    ) : (
-                      <p className="text-xs text-warning">
-                        ⚠ Phone not verified · <Link to="/verify-phone" className="font-medium text-primary">Verify now →</Link>
-                      </p>
-                    )}
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-foreground">Verification</h3>
+                      {profile?.is_email_verified && profile?.is_phone_verified && (
+                        <span className="rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success">Fully verified</span>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-medium ${profile?.is_email_verified ? "text-success" : "text-muted-foreground"}`}>
+                          {profile?.is_email_verified ? "✓" : "○"} Email
+                        </span>
+                        {profile?.is_email_verified && <span className="text-xs text-success">verified</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-medium ${profile?.is_phone_verified ? "text-success" : "text-warning"}`}>
+                          {profile?.is_phone_verified ? "✓" : "⚠"} Phone
+                        </span>
+                        {profile?.is_phone_verified
+                          ? <span className="text-xs text-success">verified</span>
+                          : <Link to="/verify-phone" className="text-xs font-medium text-primary">Verify now →</Link>
+                        }
+                      </div>
+                    </div>
                   </div>
 
                   {/* Save */}

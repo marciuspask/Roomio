@@ -26,7 +26,17 @@ class ProfileService:
             ProfileUnitOfWork, self._tenant_context,
         ) as uow:
             profile = await uow.profile.get_for_tenant()
+            email = self._tenant_context.email
+
             if profile is not None:
+                # Sync email verification — if they can make API calls, Clerk verified their email
+                if not profile.is_email_verified and email:
+                    updated = await uow.profile.update_profile(
+                        profile.id,
+                        ProfileUpdate(),
+                        system_data=ProfileSystemUpdate(is_email_verified=True),
+                    )
+                    return updated or profile
                 return profile
 
             logger.info(
@@ -35,7 +45,10 @@ class ProfileService:
             )
             return await uow.profile.create_profile(
                 ProfileUpdate(display_name=self._tenant_context.username),
-                system_data=ProfileSystemUpdate(email=self._tenant_context.email),
+                system_data=ProfileSystemUpdate(
+                    email=email,
+                    is_email_verified=bool(email),
+                ),
             )
 
     async def update_profile(self, data: ProfileUpdate) -> Profile:
