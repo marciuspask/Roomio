@@ -190,7 +190,7 @@ const Dashboard = () => {
   const selectedConversation = conversations.find(c => c.id === selectedConvo) ?? null;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 border-r border-border bg-card md:flex md:flex-col">
         <div className="p-5">
@@ -198,7 +198,7 @@ const Dashboard = () => {
             Roomi<span className="text-primary">o</span>
           </Link>
         </div>
-        <nav className="flex-1 px-3">
+        <nav className="flex-1 overflow-y-auto px-3">
           {navItems.map(item => (
             <Link key={item.id} to={item.path}
               className={`mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
@@ -216,11 +216,17 @@ const Dashboard = () => {
             </Link>
           ))}
         </nav>
-        <div className="p-4">
+        <div className="flex flex-col gap-3 p-4">
           <Link to="/listings/create"
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors">
             <Plus size={16} /> Post a room
           </Link>
+          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+            <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
+            <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link to="/terms-of-service" className="hover:text-foreground transition-colors">Terms</Link>
+            <Link to="/cookie-policy" className="hover:text-foreground transition-colors">Cookies</Link>
+          </div>
         </div>
       </aside>
 
@@ -245,7 +251,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+      <main className="flex-1 overflow-y-auto pb-24 md:pb-8">
         <div className="mx-auto max-w-4xl p-4 sm:p-6 md:p-8">
 
           {/* OVERVIEW */}

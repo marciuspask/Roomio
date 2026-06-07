@@ -11,6 +11,10 @@ import NotFound from "@/components/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import OnboardingGuard from "@/components/OnboardingGuard";
 import OnboardingPage from "@/pages/OnboardingPage";
+import AboutPage from "@/pages/AboutPage";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import TermsOfServicePage from "@/pages/TermsOfServicePage";
+import CookiePolicyPage from "@/pages/CookiePolicyPage";
 
 const clerkAppearance = {
   variables: {
@@ -40,6 +44,10 @@ const AppRoutes = () => (
       <Route path="/dashboard/messages" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard/saved" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard/profile" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+      <Route path="/cookie-policy" element={<CookiePolicyPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </OnboardingGuard>
