@@ -6,6 +6,7 @@ import { useListings } from "@/api/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlidersHorizontal, X } from "lucide-react";
 import { DISTRICTS } from "@/lib/districts";
+import { useLanguage } from "@/lib/i18n";
 
 interface FilterPanelProps {
   draftType: "all" | "offering" | "seeking";
@@ -32,27 +33,29 @@ const FilterPanel = ({
   priceMinInput, setPriceMinInput,
   priceMaxInput, setPriceMaxInput,
   applyFilters, resetFilters, setMobileFilters,
-}: FilterPanelProps) => (
+}: FilterPanelProps) => {
+  const { t } = useLanguage();
+  return (
   <div className="space-y-6">
     <div>
-      <h4 className="mb-2 text-sm font-semibold text-foreground">Type</h4>
+      <h4 className="mb-2 text-sm font-semibold text-foreground">{t.browse.type}</h4>
       <div className="flex flex-wrap gap-2">
-        {(["all", "offering", "seeking"] as const).map(t => (
+        {(["all", "offering", "seeking"] as const).map(typeOpt => (
           <button
-            key={t}
-            onClick={() => setDraftType(t)}
+            key={typeOpt}
+            onClick={() => setDraftType(typeOpt)}
             className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              draftType === t ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground hover:bg-surface-elevated"
+              draftType === typeOpt ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground hover:bg-surface-elevated"
             }`}
           >
-            {t === "all" ? "All" : t === "offering" ? "Room offered" : "Looking for room"}
+            {typeOpt === "all" ? t.browse.all : typeOpt === "offering" ? t.browse.roomOffered : t.browse.lookingForRoom}
           </button>
         ))}
       </div>
     </div>
 
     <div>
-      <h4 className="mb-2 text-sm font-semibold text-foreground">City</h4>
+      <h4 className="mb-2 text-sm font-semibold text-foreground">{t.browse.city}</h4>
       <div className="max-h-48 space-y-1.5 overflow-y-auto">
         {cities.map(c => (
           <label key={c} className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -70,7 +73,7 @@ const FilterPanel = ({
 
     {availableDistricts.length > 0 && (
       <div>
-        <h4 className="mb-2 text-sm font-semibold text-foreground">District</h4>
+        <h4 className="mb-2 text-sm font-semibold text-foreground">{t.browse.district}</h4>
         <div className="max-h-48 space-y-1.5 overflow-y-auto">
           {availableDistricts.map(d => (
             <label key={d} className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -88,12 +91,12 @@ const FilterPanel = ({
     )}
 
     <div>
-      <h4 className="mb-2 text-sm font-semibold text-foreground">Price range</h4>
+      <h4 className="mb-2 text-sm font-semibold text-foreground">{t.browse.priceRange}</h4>
       <div className="flex items-center gap-2">
         <input
           type="number"
           value={priceMinInput}
-          placeholder="Min"
+          placeholder={t.browse.min}
           onChange={e => setPriceMinInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && applyFilters()}
           className="w-20 rounded-lg border border-border bg-card px-2 py-1.5 text-sm"
@@ -102,7 +105,7 @@ const FilterPanel = ({
         <input
           type="number"
           value={priceMaxInput}
-          placeholder="Max"
+          placeholder={t.browse.max}
           onChange={e => setPriceMaxInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && applyFilters()}
           className="w-20 rounded-lg border border-border bg-card px-2 py-1.5 text-sm"
@@ -115,16 +118,18 @@ const FilterPanel = ({
         onClick={() => { applyFilters(); setMobileFilters(false); }}
         className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
       >
-        Apply
+        {t.browse.apply}
       </button>
       <button onClick={resetFilters} className="text-sm text-muted-foreground hover:text-foreground">
-        Reset all
+        {t.browse.resetAll}
       </button>
     </div>
   </div>
-);
+  );
+};
 
 const BrowseListings = () => {
+  const { t } = useLanguage();
   const { data, isLoading, isError } = useListings();
   const allListings = data?.data ?? [];
 
@@ -222,14 +227,14 @@ const BrowseListings = () => {
     if (isError) {
       return (
         <div className="py-20 text-center text-sm text-muted-foreground">
-          Could not load listings. Please try again later.
+          {t.browse.loadError}
         </div>
       );
     }
     if (filtered.length === 0) {
       return (
         <div className="py-20 text-center text-muted-foreground">
-          {allListings.length === 0 ? "No listings yet." : "No listings match your filters."}
+          {allListings.length === 0 ? t.browse.noListings : t.browse.noMatch}
         </div>
       );
     }
@@ -246,12 +251,12 @@ const BrowseListings = () => {
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {/* Mobile filter toggle */}
         <div className="mb-4 flex items-center justify-between md:hidden">
-          <span className="text-sm font-medium text-foreground">{filtered.length} listings found</span>
+          <span className="text-sm font-medium text-foreground">{t.browse.listingsFound(filtered.length)}</span>
           <button
             onClick={() => setMobileFilters(true)}
             className="flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground"
           >
-            <SlidersHorizontal size={14} /> Filters
+            <SlidersHorizontal size={14} /> {t.browse.filters}
           </button>
         </div>
 
@@ -261,7 +266,7 @@ const BrowseListings = () => {
             <div className="absolute inset-0 bg-foreground/30" onClick={() => setMobileFilters(false)} />
             <div className="relative mt-auto max-h-[80vh] overflow-y-auto rounded-t-2xl bg-background p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-heading text-lg font-bold">Filters</h3>
+                <h3 className="font-heading text-lg font-bold">{t.browse.filters}</h3>
                 <button onClick={() => setMobileFilters(false)}><X size={20} /></button>
               </div>
               <FilterPanel {...filterPanelProps} />
@@ -273,7 +278,7 @@ const BrowseListings = () => {
           {/* Desktop sidebar */}
           <aside className="hidden w-[280px] shrink-0 md:block">
             <div className="sticky top-20 rounded-xl border border-border bg-card p-5 shadow-sm">
-              <h3 className="mb-4 font-heading text-base font-bold text-foreground">Filters</h3>
+              <h3 className="mb-4 font-heading text-base font-bold text-foreground">{t.browse.filters}</h3>
               <FilterPanel {...filterPanelProps} />
             </div>
           </aside>
@@ -281,16 +286,16 @@ const BrowseListings = () => {
           {/* Main */}
           <main className="flex-1 min-w-0">
             <div className="mb-4 hidden items-center justify-between md:flex">
-              <span className="text-sm font-medium text-foreground">{filtered.length} listings found</span>
+              <span className="text-sm font-medium text-foreground">{t.browse.listingsFound(filtered.length)}</span>
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
                 className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground"
               >
-                <option value="newest">Newest</option>
-                <option value="price-asc">Price: low to high</option>
-                <option value="price-desc">Price: high to low</option>
-                <option value="featured">Featured first</option>
+                <option value="newest">{t.browse.newest}</option>
+                <option value="price-asc">{t.browse.priceLowHigh}</option>
+                <option value="price-desc">{t.browse.priceHighLow}</option>
+                <option value="featured">{t.browse.featuredFirst}</option>
               </select>
             </div>
             {renderContent()}

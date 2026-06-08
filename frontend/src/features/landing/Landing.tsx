@@ -5,8 +5,10 @@ import ListingCard from "@/features/listings/ListingCard";
 import { useListings } from "@/api/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Home, Search, MessageSquare } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 
 const Landing = () => {
+  const { t } = useLanguage();
   const { data, isLoading, isError } = useListings();
   const listings = data?.data ?? [];
 
@@ -19,14 +21,14 @@ const Landing = () => {
     if (isError) {
       return (
         <p className="col-span-3 py-10 text-center text-sm text-muted-foreground">
-          Could not load listings. Please try again later.
+          {t.landing.loadError}
         </p>
       );
     }
     if (listings.length === 0) {
       return (
         <p className="col-span-3 py-10 text-center text-sm text-muted-foreground">
-          No listings yet — be the first to post a room!
+          {t.landing.noListings}
         </p>
       );
     }
@@ -46,31 +48,31 @@ const Landing = () => {
         </div>
         <div className="relative mx-auto max-w-3xl text-center">
           <h1 className="font-heading text-4xl font-extrabold leading-tight text-foreground sm:text-5xl md:text-6xl">
-            Find your flatmate<br />in Lithuania.
+            {t.landing.heroLine1}<br />{t.landing.heroLine2}
           </h1>
           <p className="mx-auto mt-4 max-w-lg text-lg text-muted-foreground">
-            Verified listings. Real people. No scams.
+            {t.landing.heroSub}
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
               to="/listings"
               className="rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors"
             >
-              Browse rooms →
+              {t.landing.browseRooms}
             </Link>
             <Link
               to="/listings/create"
               className="rounded-lg border border-border bg-transparent px-6 py-3 text-sm font-semibold text-foreground hover:bg-surface-elevated transition-colors"
             >
-              Post a room
+              {t.landing.postRoom}
             </Link>
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
-            <span>🏠 {listings.length} active listings</span>
+            <span>{t.landing.activeListings(listings.length)}</span>
             <span>·</span>
-            <span>✓ 89% verified users</span>
+            <span>{t.landing.verifiedUsers}</span>
             <span>·</span>
-            <span>🇱🇹 Made for Lithuania</span>
+            <span>{t.landing.madeForLithuania}</span>
           </div>
         </div>
       </section>
@@ -78,14 +80,18 @@ const Landing = () => {
       {/* How it works */}
       <section id="how-it-works" className="border-t border-border px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-12 text-center font-heading text-2xl font-bold text-foreground">How it works</h2>
+          <h2 className="mb-12 text-center font-heading text-2xl font-bold text-foreground">{t.landing.howItWorks}</h2>
           <div className="grid gap-8 md:grid-cols-3">
             {[
-              { icon: <Home size={28} />, title: "Create your profile", desc: "Sign up in 2 minutes. Add a photo and a short bio." },
-              { icon: <Search size={28} />, title: "Browse verified listings", desc: "Filter by district, price, and availability." },
-              { icon: <MessageSquare size={28} />, title: "Message and meet", desc: "Verify your phone, then contact anyone directly." },
+              { icon: <Home size={28} />, ...t.landing.steps[0] },
+              { icon: <Search size={28} />, ...t.landing.steps[1] },
+              { icon: <MessageSquare size={28} />, ...t.landing.steps[2] },
             ].map((step, i) => (
-              <div key={i} className="relative rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+              <div
+                key={i}
+                className="relative rounded-xl border border-border bg-card p-6 text-center shadow-sm animate-fade-in-up"
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF3EE] text-primary">
                   {step.icon}
                 </div>
@@ -100,7 +106,7 @@ const Landing = () => {
       {/* Listings preview */}
       <section className="px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-7xl">
-          <h2 className="mb-8 text-center font-heading text-2xl font-bold text-foreground">Latest rooms in Lithuania</h2>
+          <h2 className="mb-8 text-center font-heading text-2xl font-bold text-foreground">{t.landing.latestRooms}</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {renderListings()}
           </div>
@@ -110,7 +116,7 @@ const Landing = () => {
                 to="/listings"
                 className="inline-block rounded-lg bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors"
               >
-                See all {listings.length} listings →
+                {t.landing.seeAll(listings.length)}
               </Link>
             </div>
           )}
@@ -120,9 +126,9 @@ const Landing = () => {
       {/* Trust strip */}
       <section className="border-t border-border px-4 py-10 sm:px-6">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-4">
-          {["✓ Phone-verified users", "🛡️ Zero deposit scams", "🇱🇹 Built for Lithuania"].map(t => (
-            <span key={t} className="rounded-full border border-[#F0E8DF] bg-white px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm">
-              {t}
+          {[t.landing.trustPhoneVerified, t.landing.trustNoScams, t.landing.trustBuiltForLT].map(badge => (
+            <span key={badge} className="rounded-full border border-[#F0E8DF] bg-white px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm">
+              {badge}
             </span>
           ))}
         </div>

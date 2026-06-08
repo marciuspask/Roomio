@@ -6,6 +6,7 @@ import ApiAuthProvider from "@/api/components/ApiAuthProvider";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import CookieBanner from "@/components/CookieBanner";
 import AppRoutes from "./routes";
+import { LanguageProvider } from "@/lib/i18n";
 
 const queryClient = new QueryClient();
 
@@ -14,11 +15,13 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <BrowserRouter>
-          <AnnouncementBanner />
-          <AppRoutes />
-          <CookieBanner />
-        </BrowserRouter>
+        <LanguageProvider>
+          <BrowserRouter>
+            <AnnouncementBanner />
+            <AppRoutes />
+            <CookieBanner />
+          </BrowserRouter>
+        </LanguageProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </ApiAuthProvider>

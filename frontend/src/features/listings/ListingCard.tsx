@@ -34,11 +34,11 @@ const SaveButton = ({ listingId }: { listingId: string }) => {
       onClick={handleClick}
       disabled={saving || unsaving}
       aria-label={isSaved ? "Unsave listing" : "Save listing"}
-      className="flex h-7 w-7 items-center justify-center rounded-full bg-card/80 backdrop-blur-sm shadow-sm transition-colors hover:bg-card disabled:opacity-60"
+      className="flex h-7 w-7 items-center justify-center rounded-full bg-card/80 backdrop-blur-sm shadow-sm transition-[color,background-color,transform] duration-200 ease-ui hover:bg-card hover:scale-110 disabled:opacity-60"
     >
       <Heart
         size={14}
-        className={isSaved ? "fill-primary text-primary" : "text-foreground"}
+        className={`transition-transform duration-200 ease-ui ${isSaved ? "fill-primary text-primary scale-110" : "text-foreground"}`}
       />
     </button>
   );

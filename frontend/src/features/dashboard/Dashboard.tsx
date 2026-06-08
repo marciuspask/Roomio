@@ -13,14 +13,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Occupation } from "@/api/generated/data-contracts";
 import { useToast } from "@/hooks/use-toast";
 import { Home, LayoutList, MessageSquare, User, Plus, Zap, ArrowLeft, Trash2, Heart } from "lucide-react";
+import { useLanguage, type T } from "@/lib/i18n";
 
-const formatMessageTime = (isoString: string) => {
+const formatMessageTime = (isoString: string, d: T["dashboard"]) => {
   const diff = Date.now() - new Date(isoString).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return d.justNow;
+  if (mins < 60) return d.minutesAgo(mins);
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return d.hoursAgo(hours);
   const days = Math.floor(hours / 24);
   if (days < 365) return new Date(isoString).toLocaleDateString("en-GB",
     { day: "numeric", month: "short" });
@@ -38,6 +39,7 @@ const getParticipantInfo = (conv: Conversation, currentUserId: string | null | u
 };
 
 const Dashboard = () => {
+  const { t } = useLanguage();
   const { user } = useUser();
   const { userId: clerkUserId } = useAuth();
   const { openUserProfile } = useClerk();
@@ -122,11 +124,11 @@ const Dashboard = () => {
   const totalUnread = conversations.reduce((s, c) => s + c.unread_count, 0);
 
   const navItems = [
-    { id: "overview", label: "Overview", icon: Home, path: "/dashboard" },
-    { id: "listings", label: "My Listings", icon: LayoutList, path: "/dashboard/listings" },
-    { id: "saved", label: "Saved", icon: Heart, path: "/dashboard/saved" },
-    { id: "messages", label: "Messages", icon: MessageSquare, path: "/dashboard/messages", badge: totalUnread || undefined },
-    { id: "profile", label: "My Profile", icon: User, path: "/dashboard/profile" },
+    { id: "overview", label: t.dashboard.overview, icon: Home, path: "/dashboard" },
+    { id: "listings", label: t.dashboard.myListings, icon: LayoutList, path: "/dashboard/listings" },
+    { id: "saved", label: t.dashboard.saved, icon: Heart, path: "/dashboard/saved" },
+    { id: "messages", label: t.dashboard.messages, icon: MessageSquare, path: "/dashboard/messages", badge: totalUnread || undefined },
+    { id: "profile", label: t.dashboard.myProfile, icon: User, path: "/dashboard/profile" },
   ];
 
   const handleSendMessage = (convoId: string) => {
@@ -219,13 +221,13 @@ const Dashboard = () => {
         <div className="flex flex-col gap-3 p-4">
           <Link to="/listings/create"
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors">
-            <Plus size={16} /> Post a room
+            <Plus size={16} /> {t.dashboard.postRoom}
           </Link>
           <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
-            <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
-            <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link to="/terms-of-service" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link to="/cookie-policy" className="hover:text-foreground transition-colors">Cookies</Link>
+            <Link to="/about" className="hover:text-foreground transition-colors">{t.dashboard.about}</Link>
+            <Link to="/privacy-policy" className="hover:text-foreground transition-colors">{t.dashboard.privacy}</Link>
+            <Link to="/terms-of-service" className="hover:text-foreground transition-colors">{t.dashboard.terms}</Link>
+            <Link to="/cookie-policy" className="hover:text-foreground transition-colors">{t.dashboard.cookies}</Link>
           </div>
         </div>
       </aside>
@@ -257,37 +259,37 @@ const Dashboard = () => {
           {/* OVERVIEW */}
           {activeTab === "overview" && (
             <>
-              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">Good morning, {user?.firstName ?? "there"} 👋</h1>
+              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">{t.dashboard.greeting(user?.firstName ?? "")}</h1>
 
               {profile && (profile.is_email_verified && profile.is_phone_verified ? (
                 <div className="mb-6 rounded-xl border border-success/30 bg-success-bg p-4 flex items-center gap-3">
                   <span className="text-xl">✓</span>
                   <div>
-                    <h3 className="text-sm font-semibold text-success">Account fully verified</h3>
-                    <p className="text-xs text-success/80">Email and phone number confirmed</p>
+                    <h3 className="text-sm font-semibold text-success">{t.dashboard.fullyVerified}</h3>
+                    <p className="text-xs text-success/80">{t.dashboard.fullyVerifiedSub}</p>
                   </div>
                 </div>
               ) : (
                 <div className="mb-6 rounded-xl border border-warning/30 bg-warning-bg p-4">
-                  <h3 className="mb-2 text-sm font-semibold text-warning">Complete your profile</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-warning">{t.dashboard.completeProfile}</h3>
                   <div className="mb-2 space-y-1">
                     <p className="text-xs text-warning">
-                      {profile.is_email_verified ? "✓" : "○"} Email verified
+                      {profile.is_email_verified ? "✓" : "○"} {t.dashboard.emailVerified}
                     </p>
                     <p className="text-xs text-warning">
-                      {profile.is_phone_verified ? "✓" : "○"} Phone verified
+                      {profile.is_phone_verified ? "✓" : "○"} {t.dashboard.phoneVerified}
                     </p>
                   </div>
                   {!profile.is_phone_verified && (
-                    <Link to="/verify-phone" className="text-xs font-medium text-primary">Verify phone →</Link>
+                    <Link to="/verify-phone" className="text-xs font-medium text-primary">{t.dashboard.verifyPhone}</Link>
                   )}
                 </div>
               ))}
 
               <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-2">
                 {[
-                  { label: "Active listings", value: listingsLoading ? "—" : myListings.length },
-                  { label: "Conversations", value: convsLoading ? "—" : conversations.length },
+                  { label: t.dashboard.activeListings, value: listingsLoading ? "—" : myListings.length },
+                  { label: t.dashboard.conversations, value: convsLoading ? "—" : conversations.length },
                 ].map(s => (
                   <div key={s.label} className="rounded-xl border border-border bg-card p-4 shadow-sm">
                     <div className="font-heading text-2xl font-bold text-foreground">{s.value}</div>
@@ -299,8 +301,8 @@ const Dashboard = () => {
               {/* My listings preview */}
               <div className="mb-6">
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-heading text-lg font-bold text-foreground">My listings</h2>
-                  <Link to="/dashboard/listings" className="text-xs font-medium text-primary">View all →</Link>
+                  <h2 className="font-heading text-lg font-bold text-foreground">{t.dashboard.myListingsSection}</h2>
+                  <Link to="/dashboard/listings" className="text-xs font-medium text-primary">{t.dashboard.viewAll}</Link>
                 </div>
                 {listingsLoading ? (
                   <div className="space-y-2">
@@ -309,7 +311,7 @@ const Dashboard = () => {
                     ))}
                   </div>
                 ) : myListings.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No listings yet.</p>
+                  <p className="text-sm text-muted-foreground">{t.dashboard.noListings}</p>
                 ) : (
                   myListings.slice(0, 3).map(l => (
                     <div key={l.id} className="mb-2 flex items-center gap-4 rounded-xl border border-border bg-card p-3 shadow-sm">
@@ -331,15 +333,15 @@ const Dashboard = () => {
               {/* Recent conversations */}
               <div>
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-heading text-lg font-bold text-foreground">Recent messages</h2>
-                  <Link to="/dashboard/messages" className="text-xs font-medium text-primary">View all →</Link>
+                  <h2 className="font-heading text-lg font-bold text-foreground">{t.dashboard.recentMessages}</h2>
+                  <Link to="/dashboard/messages" className="text-xs font-medium text-primary">{t.dashboard.viewAll}</Link>
                 </div>
                 {convsLoading ? (
                   <div className="space-y-2">
                     {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
                   </div>
                 ) : conversations.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No messages yet.</p>
+                  <p className="text-sm text-muted-foreground">{t.dashboard.noMessages}</p>
                 ) : (
                   <div className="space-y-2">
                     {conversations.slice(0, 3).map(c => {
@@ -376,7 +378,7 @@ const Dashboard = () => {
           {/* MY LISTINGS */}
           {activeTab === "listings" && (
             <>
-              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">My Listings</h1>
+              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">{t.dashboard.myListings}</h1>
               {listingsLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 3 }).map((_, i) => (
@@ -384,13 +386,13 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : listingsError ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">Could not load listings. Please try again.</p>
+                <p className="py-8 text-center text-sm text-muted-foreground">{t.dashboard.couldNotLoad}</p>
               ) : myListings.length === 0 ? (
                 <div className="py-16 text-center">
                   <Home size={48} className="mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="mb-2 font-heading text-lg font-bold">No listings yet</h3>
+                  <h3 className="mb-2 font-heading text-lg font-bold">{t.dashboard.noListingsYet}</h3>
                   <Link to="/listings/create" className="inline-block rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground">
-                    Post your first room →
+                    {t.dashboard.postFirstRoom}
                   </Link>
                 </div>
               ) : (
@@ -413,19 +415,19 @@ const Dashboard = () => {
                         onClick={() => navigate(`/listings/${l.id}/edit`)}
                         className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-elevated"
                       >
-                        Edit
+                        {t.dashboard.edit}
                       </button>
                       {boostedIds.includes(l.id) || l.is_boosted ? (
-                        <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary-dark">⚡ Featured</span>
+                        <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary-dark">{t.dashboard.featured}</span>
                       ) : (
                         <button onClick={() => setBoostModal(l.id)}
                           className="rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary-light">
-                          <Zap size={12} className="mr-1 inline" />Boost
+                          <Zap size={12} className="mr-1 inline" />{t.dashboard.boost}
                         </button>
                       )}
                       <button
                         onClick={() => {
-                          if (window.confirm("Delete this listing? This cannot be undone.")) {
+                          if (window.confirm(t.dashboard.deleteConfirm)) {
                             deleteListing(l.id, {
                               onSuccess: () => toast({ title: "Listing deleted." }),
                               onError: () => toast({ title: "Failed to delete", variant: "destructive" }),
@@ -435,7 +437,7 @@ const Dashboard = () => {
                         disabled={deleting}
                         className="rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-50"
                       >
-                        <Trash2 size={12} className="mr-1 inline" />Delete
+                        <Trash2 size={12} className="mr-1 inline" />{t.dashboard.delete}
                       </button>
                     </div>
                   ))}
@@ -447,7 +449,7 @@ const Dashboard = () => {
           {/* SAVED LISTINGS */}
           {activeTab === "saved" && (
             <>
-              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">Saved Listings</h1>
+              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">{t.dashboard.savedListings}</h1>
               {savedLoading ? (
                 <div className="grid gap-6 sm:grid-cols-2">
                   {Array.from({ length: 4 }).map((_, i) => (
@@ -457,15 +459,15 @@ const Dashboard = () => {
               ) : savedListings.length === 0 ? (
                 <div className="py-16 text-center">
                   <Heart size={48} className="mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="mb-2 font-heading text-lg font-bold">No saved listings yet</h3>
+                  <h3 className="mb-2 font-heading text-lg font-bold">{t.dashboard.noSavedListings}</h3>
                   <p className="mb-4 text-sm text-muted-foreground">
-                    Tap the heart on any listing to save it here.
+                    {t.dashboard.savedListingsSub}
                   </p>
                   <Link
                     to="/listings"
                     className="inline-block rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground"
                   >
-                    Browse listings →
+                    {t.dashboard.browseListings}
                   </Link>
                 </div>
               ) : (
@@ -483,13 +485,13 @@ const Dashboard = () => {
             <div className="flex h-[calc(100vh-120px)] gap-0 md:gap-4">
               {/* Conversation list */}
               <div className={`${selectedConvo ? "hidden md:block" : "block"} w-full md:w-80 shrink-0 space-y-1 overflow-y-auto`}>
-                <h1 className="mb-4 font-heading text-2xl font-bold text-foreground">Messages</h1>
+                <h1 className="mb-4 font-heading text-2xl font-bold text-foreground">{t.dashboard.messages}</h1>
                 {convsLoading ? (
                   <div className="space-y-2">
                     {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
                   </div>
                 ) : conversations.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">No conversations yet.</p>
+                  <p className="py-8 text-center text-sm text-muted-foreground">{t.dashboard.noConversations}</p>
                 ) : (
                   conversations.map(c => {
                     const { displayName, avatarUrl } = getParticipantInfo(c, clerkUserId);
@@ -559,7 +561,7 @@ const Dashboard = () => {
                           {wsConnected && (
                             <span className="flex items-center gap-1 text-[10px] font-medium text-success">
                               <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                              Live
+                              {t.dashboard.live}
                             </span>
                           )}
                         </>
@@ -582,7 +584,7 @@ const Dashboard = () => {
                             {m.body}
                           </div>
                           <span className="mt-0.5 text-[10px] text-muted-foreground">
-                            {formatMessageTime(m.created_at)}
+                            {formatMessageTime(m.created_at, t.dashboard)}
                           </span>
                         </div>
                       </div>
@@ -594,7 +596,7 @@ const Dashboard = () => {
                       value={newMsg}
                       onChange={e => setNewMsg(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && !sending && handleSendMessage(selectedConversation.id)}
-                      placeholder="Type a message..."
+                      placeholder={t.dashboard.typeMessage}
                       className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
                     />
                     <button
@@ -602,13 +604,13 @@ const Dashboard = () => {
                       disabled={sending}
                       className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
                     >
-                      {sending && !wsConnected ? "…" : "Send"}
+                      {sending && !wsConnected ? "…" : t.dashboard.send}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="hidden flex-1 items-center justify-center rounded-xl border border-border bg-card md:flex">
-                  <p className="text-sm text-muted-foreground">Select a conversation</p>
+                  <p className="text-sm text-muted-foreground">{t.dashboard.selectConversation}</p>
                 </div>
               )}
             </div>
@@ -617,7 +619,7 @@ const Dashboard = () => {
           {/* PROFILE */}
           {activeTab === "profile" && (
             <>
-              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">My Profile</h1>
+              <h1 className="mb-6 font-heading text-2xl font-bold text-foreground">{t.dashboard.myProfile}</h1>
               {profileLoading ? (
                 <div className="max-w-lg space-y-4">
                   <Skeleton className="h-16 w-16 rounded-full" />
@@ -644,29 +646,29 @@ const Dashboard = () => {
                       disabled={uploadingPhoto}
                       className="text-sm font-medium text-primary disabled:opacity-50"
                     >
-                      {uploadingPhoto ? "Uploading..." : "Change photo"}
+                      {uploadingPhoto ? t.dashboard.uploading : t.dashboard.changePhoto}
                     </button>
                   </div>
 
                   {/* Full name */}
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Full name</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">{t.dashboard.fullName}</label>
                     <input
                       type="text"
                       value={fullName}
                       onChange={e => setFullName(e.target.value)}
-                      placeholder="Your full name"
+                      placeholder={t.dashboard.fullNamePlaceholder}
                       className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
                     />
                   </div>
 
                   {/* Bio */}
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Bio</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">{t.dashboard.bio}</label>
                     <textarea
                       value={profileBio}
                       onChange={e => setProfileBio(e.target.value.slice(0, 500))}
-                      placeholder="Short bio..."
+                      placeholder={t.dashboard.bioPlaceholder}
                       className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
                       rows={3}
                     />
@@ -675,7 +677,7 @@ const Dashboard = () => {
 
                   {/* Occupation */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-foreground">Occupation</p>
+                    <p className="mb-2 text-sm font-medium text-foreground">{t.dashboard.occupation}</p>
                     <div className="flex gap-2">
                       {([Occupation.Student, Occupation.Working, Occupation.Other] as const).map(o => (
                         <button
@@ -696,25 +698,25 @@ const Dashboard = () => {
                   {/* Verification */}
                   <div className="rounded-xl border border-border bg-card p-4">
                     <div className="mb-3 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-foreground">Verification</h3>
+                      <h3 className="text-sm font-semibold text-foreground">{t.dashboard.verification}</h3>
                       {profile?.is_email_verified && profile?.is_phone_verified && (
-                        <span className="rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success">Fully verified</span>
+                        <span className="rounded-full bg-success-bg px-2 py-0.5 text-xs font-medium text-success">{t.dashboard.fullyVerifiedBadge}</span>
                       )}
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-medium ${profile?.is_email_verified ? "text-success" : "text-muted-foreground"}`}>
-                          {profile?.is_email_verified ? "✓" : "○"} Email
+                          {profile?.is_email_verified ? "✓" : "○"} {t.dashboard.email}
                         </span>
-                        {profile?.is_email_verified && <span className="text-xs text-success">verified</span>}
+                        {profile?.is_email_verified && <span className="text-xs text-success">{t.dashboard.verifiedLabel}</span>}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-medium ${profile?.is_phone_verified ? "text-success" : "text-warning"}`}>
-                          {profile?.is_phone_verified ? "✓" : "⚠"} Phone
+                          {profile?.is_phone_verified ? "✓" : "⚠"} {t.dashboard.phone}
                         </span>
                         {profile?.is_phone_verified
-                          ? <span className="text-xs text-success">verified</span>
-                          : <Link to="/verify-phone" className="text-xs font-medium text-primary">Verify now →</Link>
+                          ? <span className="text-xs text-success">{t.dashboard.verifiedLabel}</span>
+                          : <Link to="/verify-phone" className="text-xs font-medium text-primary">{t.dashboard.verifyNow}</Link>
                         }
                       </div>
                     </div>
@@ -726,7 +728,7 @@ const Dashboard = () => {
                     disabled={savingProfile}
                     className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50"
                   >
-                    {savingProfile ? "Saving..." : "Save changes"}
+                    {savingProfile ? t.dashboard.saving : t.dashboard.saveChanges}
                   </button>
 
                   {/* Security link */}
@@ -734,7 +736,7 @@ const Dashboard = () => {
                     onClick={() => openUserProfile()}
                     className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Password &amp; security →
+                    {t.dashboard.passwordSecurity}
                   </button>
                 </div>
               )}
@@ -745,14 +747,14 @@ const Dashboard = () => {
 
       {/* Boost modal */}
       {boostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30" onClick={() => setBoostModal(null)}>
-          <div className="mx-4 w-full max-w-sm rounded-xl bg-card p-6 shadow-lg" onClick={e => e.stopPropagation()}>
-            <h3 className="mb-2 font-heading text-lg font-bold text-foreground">Boost this listing</h3>
-            <p className="mb-1 text-sm text-muted-foreground">Your listing will appear at the top of search results for 7 days.</p>
-            <p className="mb-4 text-lg font-bold text-foreground">€3.00 <span className="text-sm font-normal text-muted-foreground">one-time</span></p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 animate-in fade-in-0 duration-200" onClick={() => setBoostModal(null)}>
+          <div className="mx-4 w-full max-w-sm rounded-xl bg-card p-6 shadow-lg animate-in zoom-in-95 fade-in-0 duration-200 ease-ui" onClick={e => e.stopPropagation()}>
+            <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{t.dashboard.boostTitle}</h3>
+            <p className="mb-1 text-sm text-muted-foreground">{t.dashboard.boostDesc}</p>
+            <p className="mb-4 text-lg font-bold text-foreground">€3.00 <span className="text-sm font-normal text-muted-foreground">{t.dashboard.boostPriceSub}</span></p>
             <button onClick={() => handleBoost(boostModal)} disabled={boostLoading}
               className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-              {boostLoading ? "Boosting..." : "Boost now →"}
+              {boostLoading ? t.dashboard.boosting : t.dashboard.boostNow}
             </button>
           </div>
         </div>

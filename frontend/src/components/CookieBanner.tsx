@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { X, ChevronDown, ChevronUp, Cookie } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { useLanguage } from "@/lib/i18n";
 
 const CONSENT_KEY = "roomio_cookie_consent";
 
@@ -22,6 +23,7 @@ function saveConsent(functional: boolean, analytics: boolean) {
 }
 
 const CookieBanner = () => {
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [functional, setFunctional] = useState(true);
@@ -51,7 +53,7 @@ const CookieBanner = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background shadow-lg">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background shadow-lg animate-in slide-in-from-bottom-4 duration-500 ease-drawer">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
         <div className="flex flex-col gap-4">
           {/* Top row */}
@@ -59,14 +61,13 @@ const CookieBanner = () => {
             <div className="flex items-start gap-3">
               <Cookie className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <p className="text-sm text-muted-foreground">
-                We use cookies to keep the site working and understand how it's used.
-                Read our{" "}
+                {t.cookie.message}{" "}
                 <Link to="/cookie-policy" className="underline hover:text-foreground transition-colors">
-                  Cookie Policy
+                  {t.cookie.cookiePolicy}
                 </Link>{" "}
-                and{" "}
+                {t.cookie.and}{" "}
                 <Link to="/privacy-policy" className="underline hover:text-foreground transition-colors">
-                  Privacy Policy
+                  {t.cookie.privacyPolicy}
                 </Link>
                 .
               </p>
@@ -87,20 +88,16 @@ const CookieBanner = () => {
                 {/* Essential */}
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-foreground">Essential cookies</p>
-                    <p className="text-xs text-muted-foreground">
-                      Required for the site to work (login session, security). Cannot be disabled.
-                    </p>
+                    <p className="font-medium text-foreground">{t.cookie.essential}</p>
+                    <p className="text-xs text-muted-foreground">{t.cookie.essentialDesc}</p>
                   </div>
                   <Switch checked disabled aria-label="Essential cookies always enabled" />
                 </div>
                 {/* Functional */}
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-foreground">Functional cookies</p>
-                    <p className="text-xs text-muted-foreground">
-                      Remember your preferences (e.g. sidebar state) across visits.
-                    </p>
+                    <p className="font-medium text-foreground">{t.cookie.functional}</p>
+                    <p className="text-xs text-muted-foreground">{t.cookie.functionalDesc}</p>
                   </div>
                   <Switch
                     checked={functional}
@@ -111,10 +108,8 @@ const CookieBanner = () => {
                 {/* Analytics */}
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-foreground">Analytics cookies</p>
-                    <p className="text-xs text-muted-foreground">
-                      Help us understand how visitors use the site so we can improve it.
-                    </p>
+                    <p className="font-medium text-foreground">{t.cookie.analytics}</p>
+                    <p className="text-xs text-muted-foreground">{t.cookie.analyticsDesc}</p>
                   </div>
                   <Switch
                     checked={analytics}
@@ -129,24 +124,24 @@ const CookieBanner = () => {
           {/* Action buttons */}
           <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" onClick={acceptAll}>
-              Accept all
+              {t.cookie.acceptAll}
             </Button>
             <Button size="sm" variant="outline" onClick={rejectAll}>
-              Reject non-essential
+              {t.cookie.rejectNonEssential}
             </Button>
             <button
               onClick={() => setExpanded(v => !v)}
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {expanded ? (
-                <>Fewer options <ChevronUp className="h-3.5 w-3.5" /></>
+                <>{t.cookie.fewerOptions} <ChevronUp className="h-3.5 w-3.5" /></>
               ) : (
-                <>Manage preferences <ChevronDown className="h-3.5 w-3.5" /></>
+                <>{t.cookie.managePreferences} <ChevronDown className="h-3.5 w-3.5" /></>
               )}
             </button>
             {expanded && (
               <Button size="sm" variant="secondary" onClick={savePreferences} className="ml-auto">
-                Save preferences
+                {t.cookie.savePreferences}
               </Button>
             )}
           </div>
