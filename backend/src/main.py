@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 import structlog
 from clerk_backend_api import Clerk
 from fastapi import FastAPI
@@ -9,8 +10,8 @@ from fastapi.routing import APIRoute
 from pydantic import ValidationError
 
 import listings.database.orm_models  # noqa: F401 — registers ListingORM with Base.metadata
-import phone_verification.database.orm_models  # noqa: F401 — registers PhoneVerificationORM with Base.metadata
 import messages.database.orm_models  # noqa: F401 — registers ConversationORM/MessageORM with Base.metadata
+import phone_verification.database.orm_models  # noqa: F401 — registers PhoneVerificationORM with Base.metadata
 import profile.database.orm_models  # noqa: F401 — registers ProfileORM with Base.metadata
 import saved.database.orm_models  # noqa: F401 — registers SavedListingORM with Base.metadata
 import settings.database.orm_models  # noqa: F401 — registers SettingsORM with Base.metadata
@@ -25,12 +26,12 @@ from errors.handlers import (
     request_validation_error_handler,
 )
 from listings.router import router as listings_router
-from phone_verification.router import router as phone_verification_router
-from migration.router import router as migration_router
 from logging_config import configure_logging
 from messages.router import listings_router as message_listings_router
 from messages.router import router as messages_router
 from messages.websocket import ConnectionManager
+from migration.router import router as migration_router
+from phone_verification.router import router as phone_verification_router
 from profile.router import router as profile_router
 from profile.router import users_router
 from routes.geocode import router as geocode_router
@@ -46,6 +47,13 @@ logger = structlog.get_logger(__name__)
 async def lifespan(app: FastAPI):
     config = Settings()  # type: ignore[call-arg]  # pydantic-settings reads from .env
     app.state.config = config
+
+    if config.sentry_dsn:
+        sentry_sdk.init(
+            dsn=config.sentry_dsn,
+            environment=config.environment,
+            traces_sample_rate=0.1,
+        )
 
     configure_logging(debug=config.debug)
 

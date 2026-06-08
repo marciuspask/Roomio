@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     app_name: str = Field(default="Roomio API", description="Name of the application")
     app_version: str = Field(default="0.1.0", description="Current version of the application")
+    environment: str = Field(default="development", description="Deployment environment")
     debug: bool = Field(default=False, description="Enable debug mode with verbose logging")
     host: str = Field(default="0.0.0.0", description="Host address the server binds to")
     port: int = Field(default=8000, description="Port the server listens on")
@@ -22,3 +23,4 @@ class Settings(BaseSettings):
     twilio_account_sid: str = Field(default="", description="Twilio Account SID")
     twilio_auth_token: str = Field(default="", description="Twilio Auth Token")
     twilio_phone_number: str = Field(default="", description="Twilio sender phone number")
+    sentry_dsn: str = Field(default="", description="Sentry DSN for error tracking")
