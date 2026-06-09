@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import TypeBadge from "@/features/listings/TypeBadge";
 import FeaturedBadge from "@/features/listings/FeaturedBadge";
+import ReportModal from "@/components/ReportModal";
 import { useListing, usePublicProfile, useStartConversation } from "@/api/hooks";
 import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +23,7 @@ const ListingDetail = () => {
   const isOwnListing = !!listing && listing.tenant_id === userId;
   const { toast } = useToast();
   const [showFullDesc, setShowFullDesc] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [messageState, setMessageState] = useState<"idle" | "composing" | "sent">("idle");
   const [messageText, setMessageText] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -347,7 +349,7 @@ const ListingDetail = () => {
               </button>
 
               <button
-                onClick={() => toast({ title: "Thanks for reporting", description: "We'll review this listing." })}
+                onClick={() => setReportOpen(true)}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Flag size={12} /> Report listing
@@ -379,6 +381,15 @@ const ListingDetail = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {id && (
+        <ReportModal
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          targetType="listing"
+          targetId={id}
+        />
       )}
 
       <Footer />

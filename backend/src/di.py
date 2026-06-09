@@ -2,7 +2,6 @@ from typing import Annotated
 
 from fastapi import Depends, Request, WebSocket
 
-from phone_verification.service import PhoneVerificationService
 from auth.dependencies import (
     TenantResolver,
     get_anonymous_context,
@@ -15,6 +14,8 @@ from messages.service import MessagesService
 from messages.websocket import ConnectionManager
 from migration.service import MigrationService
 from models import TenantContext
+from moderation.service import ModerationService
+from phone_verification.service import PhoneVerificationService
 from profile.service import ProfileService
 from saved.service import SavedListingsService
 from settings.service import SettingsService
@@ -125,7 +126,20 @@ def get_phone_verification_service(request: Request, tenant: TenantDep) -> Phone
     return PhoneVerificationService(uow_factory=uow_factory, tenant_context=tenant, settings=config)
 
 
-PhoneVerificationServiceDep = Annotated[PhoneVerificationService, Depends(get_phone_verification_service)]
+PhoneVerificationServiceDep = Annotated[
+    PhoneVerificationService, Depends(get_phone_verification_service)
+]
+
+
+# -- Moderation ---------------------------------------------------------------
+
+def get_moderation_service(request: Request, tenant: TenantDep) -> ModerationService:
+    session_maker = request.app.state.session_maker
+    uow_factory = UnitOfWorkFactory(session_maker)
+    return ModerationService(uow_factory=uow_factory, tenant_context=tenant)
+
+
+ModerationServiceDep = Annotated[ModerationService, Depends(get_moderation_service)]
 
 
 # -- Migration ----------------------------------------------------------------

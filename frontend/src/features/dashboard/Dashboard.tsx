@@ -9,11 +9,19 @@ import {
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type { Conversation } from "@/api/generated/data-contracts";
 import ListingCard from "@/features/listings/ListingCard";
+import ReportModal from "@/components/ReportModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Occupation } from "@/api/generated/data-contracts";
 import { useToast } from "@/hooks/use-toast";
-import { Home, LayoutList, MessageSquare, User, Plus, Zap, ArrowLeft, Trash2, Heart } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Home, LayoutList, MessageSquare, User, Plus, Zap, ArrowLeft, Trash2, Heart, MoreVertical, Ban, Flag } from "lucide-react";
 import { useLanguage, type T } from "@/lib/i18n";
+import { apiClient } from "@/api/client";
 
 const formatMessageTime = (isoString: string, d: T["dashboard"]) => {
   const diff = Date.now() - new Date(isoString).getTime();
@@ -63,7 +71,7 @@ const Dashboard = () => {
   const savedIds = savedData?.data ?? [];
   const { data: allListingsData } = useListings();
   const savedListings = (allListingsData?.data ?? []).filter(l => savedIds.includes(l.id));
-  const conversations = conversationsData?.data ?? [];
+  const conversations = (conversationsData?.data ?? []).filter(c => !hiddenConvIds.has(c.id));
 
   const [fullName, setFullName] = useState("");
   const [profileBio, setProfileBio] = useState("");
@@ -85,6 +93,8 @@ const Dashboard = () => {
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
   const [newMsg, setNewMsg] = useState("");
   const manuallyDeselected = useRef(false);
+  const [hiddenConvIds, setHiddenConvIds] = useState<Set<string>>(new Set());
+  const [reportTarget, setReportTarget] = useState<{ userId: string; convId: string } | null>(null);
 
   // Auto-open newest conversation when entering the messages tab
   useEffect(() => {
@@ -141,6 +151,17 @@ const Dashboard = () => {
         { conversationId: convoId, body: newMsg },
         { onSuccess: () => setNewMsg("") },
       );
+    }
+  };
+
+  const handleBlockUser = async (userId: string, convId: string) => {
+    try {
+      await apiClient.instance.post(`/api/v1/moderation/block/${userId}`);
+      setHiddenConvIds(prev => new Set([...prev, convId]));
+      if (selectedConvo === convId) setSelectedConvo(null);
+      toast({ title: "User blocked." });
+    } catch {
+      toast({ title: "Failed to block user", variant: "destructive" });
     }
   };
 
@@ -564,6 +585,32 @@ const Dashboard = () => {
                               {t.dashboard.live}
                             </span>
                           )}
+                          {(() => {
+                            const otherId = selectedConversation.participant_ids.find(id => id !== clerkUserId) ?? "";
+                            return (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-surface-elevated hover:text-foreground transition-colors" aria-label="Conversation options">
+                                    <MoreVertical size={15} />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => setReportTarget({ userId: otherId, convId: selectedConversation.id })}
+                                    className="gap-2 text-muted-foreground"
+                                  >
+                                    <Flag size={14} /> Report user
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleBlockUser(otherId, selectedConversation.id)}
+                                    className="gap-2 text-destructive focus:text-destructive"
+                                  >
+                                    <Ban size={14} /> Block user
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            );
+                          })()}
                         </>
                       );
                     })()}
@@ -744,6 +791,15 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+
+      {reportTarget && (
+        <ReportModal
+          open={!!reportTarget}
+          onOpenChange={(v) => { if (!v) setReportTarget(null); }}
+          targetType="user"
+          targetId={reportTarget.userId}
+        />
+      )}
 
       {/* Boost modal */}
       {boostModal && (

@@ -42,6 +42,7 @@ class ProfileUpdate(BaseModel):
     )
     occupation: Occupation | None = Field(default=None, description="User's employment status")
     date_of_birth: date | None = Field(default=None, description="User's date of birth")
+    image_url: str | None = Field(default=None, description="Profile photo URL from Clerk")
 
 
 class ProfileSystemUpdate(BaseModel):

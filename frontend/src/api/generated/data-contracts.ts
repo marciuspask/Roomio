@@ -728,6 +728,11 @@ export interface ProfileUpdate {
    * User's date of birth
    */
   date_of_birth?: string | null;
+  /**
+   * Image Url
+   * Profile photo URL from Clerk
+   */
+  image_url?: string | null;
 }
 
 /** SavedListingsResponse */

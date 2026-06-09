@@ -24,6 +24,7 @@ import messages.database.orm_models  # noqa: F401
 import profile.database.orm_models  # noqa: F401
 import saved.database.orm_models  # noqa: F401
 import settings.database.orm_models  # noqa: F401
+import moderation.database.orm_models  # noqa: F401
 
 from common.database.base_models import Base
 from sqlalchemy import text

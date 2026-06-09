@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 import listings.database.orm_models  # noqa: F401 — registers ListingORM with Base.metadata
 import messages.database.orm_models  # noqa: F401 — registers ConversationORM/MessageORM with Base.metadata
+import moderation.database.orm_models  # noqa: F401 — registers BlockORM/ReportORM with Base.metadata
 import phone_verification.database.orm_models  # noqa: F401 — registers PhoneVerificationORM with Base.metadata
 import profile.database.orm_models  # noqa: F401 — registers ProfileORM with Base.metadata
 import saved.database.orm_models  # noqa: F401 — registers SavedListingORM with Base.metadata
@@ -32,6 +33,7 @@ from messages.router import listings_router as message_listings_router
 from messages.router import router as messages_router
 from messages.websocket import ConnectionManager
 from migration.router import router as migration_router
+from moderation.router import router as moderation_router
 from phone_verification.router import router as phone_verification_router
 from profile.router import router as profile_router
 from profile.router import users_router
@@ -122,6 +124,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(Exception, generic_exception_handler)
 
     app.include_router(feedback_router)
+    app.include_router(moderation_router)
     app.include_router(geocode_router)
     app.include_router(health_router)
     app.include_router(me_router)
