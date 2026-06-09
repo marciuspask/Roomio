@@ -25,6 +25,7 @@ from errors.handlers import (
     pydantic_validation_error_handler,
     request_validation_error_handler,
 )
+from feedback.router import router as feedback_router
 from listings.router import router as listings_router
 from logging_config import configure_logging
 from messages.router import listings_router as message_listings_router
@@ -120,6 +121,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RequestValidationError, request_validation_error_handler)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, generic_exception_handler)
 
+    app.include_router(feedback_router)
     app.include_router(geocode_router)
     app.include_router(health_router)
     app.include_router(me_router)

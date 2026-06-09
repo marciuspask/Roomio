@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ApiAuthProvider from "@/api/components/ApiAuthProvider";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
+import BugReportModal from "@/components/BugReportModal";
 import CookieBanner from "@/components/CookieBanner";
 import AppRoutes from "./routes";
 import { LanguageProvider } from "@/lib/i18n";
@@ -20,6 +21,7 @@ const App = () => (
             <AnnouncementBanner />
             <AppRoutes />
             <CookieBanner />
+            <BugReportModal />
           </BrowserRouter>
         </LanguageProvider>
       </TooltipProvider>
