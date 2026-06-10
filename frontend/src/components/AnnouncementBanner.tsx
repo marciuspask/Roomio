@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/lib/i18n";
 
 interface Announcement {
-  message: string;
-  link_text: string;
+  message_en: string;
+  message_lt: string;
+  link_text_en: string;
+  link_text_lt: string;
   link_url: string;
   active: boolean;
 }
 
 export default function AnnouncementBanner() {
+  const { lang } = useLanguage();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
@@ -21,6 +25,9 @@ export default function AnnouncementBanner() {
       .catch(() => {});
   }, []);
 
+  const message = announcement ? (lang === "lt" ? announcement.message_lt : announcement.message_en) : "";
+  const linkText = announcement ? (lang === "lt" ? announcement.link_text_lt : announcement.link_text_en) : "";
+
   const [displayed, setDisplayed] = useState("");
   const [linkVisible, setLinkVisible] = useState(false);
 
@@ -30,21 +37,17 @@ export default function AnnouncementBanner() {
     setLinkVisible(false);
     let i = 0;
     const interval = setInterval(() => {
-      setDisplayed(announcement.message.slice(0, i + 1));
+      setDisplayed(message.slice(0, i + 1));
       i++;
-      if (i >= announcement.message.length) {
+      if (i >= message.length) {
         clearInterval(interval);
         setLinkVisible(true);
       }
     }, 35);
     return () => clearInterval(interval);
-  }, [announcement]);
+  }, [announcement, lang]);
 
   if (!announcement || dismissed) return null;
-
-  const handleDismiss = () => {
-    setDismissed(true);
-  };
 
   return (
     <div
@@ -63,11 +66,11 @@ export default function AnnouncementBanner() {
             transition: "opacity 0.4s ease",
           }}
         >
-          {announcement.link_text}
+          {linkText}
         </Link>
       </p>
       <button
-        onClick={handleDismiss}
+        onClick={() => setDismissed(true)}
         style={{ color: "#F5C4B3" }}
         className="absolute right-4 top-1/2 -translate-y-1/2 text-lg leading-none"
         aria-label="Dismiss"

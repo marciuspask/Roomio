@@ -327,6 +327,16 @@ export interface Listing {
    */
   poster_age?: number | null;
   /**
+   * Poster Phone Verified
+   * Whether the poster has a verified phone number
+   */
+  poster_phone_verified?: boolean;
+  /**
+   * Poster Email Verified
+   * Whether the poster has a verified email address
+   */
+  poster_email_verified?: boolean;
+  /**
    * Created At
    * When the listing was created
    * @format date-time

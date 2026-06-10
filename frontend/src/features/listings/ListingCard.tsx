@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Listing } from "@/api/generated/data-contracts";
-import { MapPin, Calendar, User, Heart } from "lucide-react";
+import { MapPin, Calendar, User, Heart, BadgeCheck } from "lucide-react";
 import { useAuth } from "@clerk/react";
 import { useSavedListings, useSaveListing, useUnsaveListing } from "@/api/hooks";
 import TypeBadge from "./TypeBadge";
 import FeaturedBadge from "./FeaturedBadge";
+import { useLanguage } from "@/lib/i18n";
 
 const SaveButton = ({ listingId }: { listingId: string }) => {
   const { isSignedIn } = useAuth();
@@ -45,7 +46,8 @@ const SaveButton = ({ listingId }: { listingId: string }) => {
 };
 
 const ListingCard = ({ listing }: { listing: Listing }) => {
-  const dateStr = new Date(listing.available_from).toLocaleDateString("en-GB", {
+  const { t, lang } = useLanguage();
+  const dateStr = new Date(listing.available_from).toLocaleDateString(lang === "lt" ? "lt-LT" : "en-GB", {
     day: "numeric", month: "short", year: "numeric",
   });
 
@@ -60,7 +62,7 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
           <img
             src={listing.photos[0]}
             alt={listing.title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-ui-in-out group-hover:scale-[1.04]"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 transition-transform duration-300 group-hover:scale-105" />
@@ -108,10 +110,18 @@ const ListingCard = ({ listing }: { listing: Listing }) => {
             </span>
           )}
         </div>
-        <span className="text-xs text-muted-foreground">
-          {listing.poster_display_name ?? (listing.listing_type === "offering" ? "Room owner" : "Room seeker")}
+        <span className="min-w-0 truncate text-xs text-muted-foreground">
+          {listing.poster_display_name ?? (listing.listing_type === "offering" ? t.publicProfile.roomOwner : t.publicProfile.roomSeeker)}
           {listing.poster_age != null ? `, ${listing.poster_age}` : ""}
         </span>
+        {listing.poster_phone_verified && (
+          <span
+            className="ml-auto shrink-0 flex items-center gap-1 text-[10px] font-medium text-[hsl(var(--success))]"
+            title={t.browse.phoneVerifiedBadge}
+          >
+            <BadgeCheck size={13} />
+          </span>
+        )}
       </div>
     </Link>
   );

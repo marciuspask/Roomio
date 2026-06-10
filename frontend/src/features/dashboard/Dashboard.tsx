@@ -87,6 +87,10 @@ const Dashboard = () => {
       setProfileBio(profile.bio ?? "");
       setProfileOccupation(profile.occupation ?? null);
     }
+    // Sync Clerk photo URL to DB if it's missing or outdated
+    if (profile && user?.imageUrl && profile.image_url !== user.imageUrl) {
+      saveProfile({ image_url: user.imageUrl });
+    }
   }, [profile, user]);
 
   // Messages state
@@ -420,11 +424,11 @@ const Dashboard = () => {
                 <div className="space-y-3">
                   {myListings.map(l => (
                     <div key={l.id} className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-                      <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+                      <Link to={`/listings/${l.id}`} className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 block">
                         {l.photos?.[0] && <img src={l.photos[0]} alt={l.title} className="h-full w-full object-cover" />}
-                      </div>
+                      </Link>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-foreground">{l.title}</h4>
+                        <Link to={`/listings/${l.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">{l.title}</Link>
                         <p className="text-xs text-muted-foreground">
                           {l.district ? `${l.district} · ` : ""}{l.city} · €{l.price}/mo
                         </p>

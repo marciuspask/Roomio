@@ -21,6 +21,8 @@ interface FilterPanelProps {
   availableDistricts: string[];
   draftDistricts: string[];
   toggleDraftDistrict: (d: string) => void;
+  draftVerifiedOnly: boolean;
+  setDraftVerifiedOnly: (v: boolean) => void;
   applyFilters: () => void;
   resetFilters: () => void;
   setMobileFilters: (v: boolean) => void;
@@ -32,6 +34,7 @@ const FilterPanel = ({
   availableDistricts, draftDistricts, toggleDraftDistrict,
   priceMinInput, setPriceMinInput,
   priceMaxInput, setPriceMaxInput,
+  draftVerifiedOnly, setDraftVerifiedOnly,
   applyFilters, resetFilters, setMobileFilters,
 }: FilterPanelProps) => {
   const { t } = useLanguage();
@@ -113,6 +116,25 @@ const FilterPanel = ({
       </div>
     </div>
 
+    <div>
+      <label className="flex cursor-pointer items-center justify-between gap-3">
+        <span className="text-sm font-semibold text-foreground">{t.browse.verifiedOnly}</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={draftVerifiedOnly}
+          onClick={() => setDraftVerifiedOnly(!draftVerifiedOnly)}
+          className={`relative h-6 w-10 shrink-0 rounded-full outline-none transition-colors duration-150 ease-ui focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+            draftVerifiedOnly ? "bg-primary" : "bg-muted"
+          }`}
+        >
+          <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-150 ease-ui ${
+            draftVerifiedOnly ? "translate-x-5" : "translate-x-1"
+          }`} />
+        </button>
+      </label>
+    </div>
+
     <div className="flex gap-2">
       <button
         onClick={() => { applyFilters(); setMobileFilters(false); }}
@@ -138,12 +160,14 @@ const BrowseListings = () => {
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number | undefined, number | undefined]>([undefined, undefined]);
+  const [verifiedOnlyFilter, setVerifiedOnlyFilter] = useState(false);
   // Draft state (only committed on Apply)
   const [draftType, setDraftType] = useState<"all" | "offering" | "seeking">("all");
   const [draftCities, setDraftCities] = useState<string[]>([]);
   const [draftDistricts, setDraftDistricts] = useState<string[]>([]);
   const [priceMinInput, setPriceMinInput] = useState("");
   const [priceMaxInput, setPriceMaxInput] = useState("");
+  const [draftVerifiedOnly, setDraftVerifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [mobileFilters, setMobileFilters] = useState(false);
 
@@ -159,6 +183,7 @@ const BrowseListings = () => {
     if (selectedDistricts.length > 0) results = results.filter(l => l.district != null && selectedDistricts.includes(l.district));
     if (priceRange[0] !== undefined) results = results.filter(l => l.price >= priceRange[0]!);
     if (priceRange[1] !== undefined) results = results.filter(l => l.price <= priceRange[1]!);
+    if (verifiedOnlyFilter) results = results.filter(l => l.poster_phone_verified);
 
     switch (sortBy) {
       case "price-asc": results.sort((a, b) => a.price - b.price); break;
@@ -167,7 +192,7 @@ const BrowseListings = () => {
       default: results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
     return results;
-  }, [allListings, typeFilter, selectedCities, selectedDistricts, priceRange, sortBy]);
+  }, [allListings, typeFilter, selectedCities, selectedDistricts, priceRange, verifiedOnlyFilter, sortBy]);
 
   const availableDistricts = useMemo(() => {
     const all = draftCities.flatMap(c => DISTRICTS[c] ?? []);
@@ -191,6 +216,7 @@ const BrowseListings = () => {
       priceMinInput ? +priceMinInput : undefined,
       priceMaxInput ? +priceMaxInput : undefined,
     ]);
+    setVerifiedOnlyFilter(draftVerifiedOnly);
   };
 
   const resetFilters = () => {
@@ -198,11 +224,13 @@ const BrowseListings = () => {
     setSelectedCities([]);
     setSelectedDistricts([]);
     setPriceRange([undefined, undefined]);
+    setVerifiedOnlyFilter(false);
     setDraftType("all");
     setDraftCities([]);
     setDraftDistricts([]);
     setPriceMinInput("");
     setPriceMaxInput("");
+    setDraftVerifiedOnly(false);
   };
 
   const filterPanelProps: FilterPanelProps = {
@@ -211,6 +239,7 @@ const BrowseListings = () => {
     availableDistricts, draftDistricts, toggleDraftDistrict,
     priceMinInput, setPriceMinInput,
     priceMaxInput, setPriceMaxInput,
+    draftVerifiedOnly, setDraftVerifiedOnly,
     applyFilters, resetFilters, setMobileFilters,
   };
 

@@ -51,6 +51,8 @@ class ListingsService:
             "poster_display_name": profile.display_name,
             "poster_image_url": profile.image_url,
             "poster_age": profile.age,
+            "poster_phone_verified": profile.is_phone_verified,
+            "poster_email_verified": profile.is_email_verified,
         })
 
     # -- Public methods (no auth required) ------------------------------------

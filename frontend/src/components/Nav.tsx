@@ -25,16 +25,16 @@ const Nav = () => {
   return (
     <nav className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="font-heading text-xl font-bold text-foreground">
+        <Link to="/" className="font-heading text-xl font-bold text-foreground transition-opacity duration-150 ease-ui hover:opacity-75">
           Roomi<span className="text-primary">o</span>
         </Link>
 
         {/* Desktop */}
         <div className="hidden items-center gap-6 md:flex">
-          <Link to="/listings" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/listings" className="nav-link text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-150 ease-ui">
             {t.nav.browseRooms}
           </Link>
-          <Link to="/#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/#how-it-works" className="nav-link text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-150 ease-ui">
             {t.nav.howItWorks}
           </Link>
         </div>
@@ -42,7 +42,7 @@ const Nav = () => {
           <LangToggle />
           {isSignedIn ? (
             <>
-              <Link to="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/dashboard" className="nav-link text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-150 ease-ui">
                 {t.nav.dashboard}
               </Link>
               <UserButton userProfileUrl="/dashboard/profile" userProfileMode="navigation" />
@@ -57,13 +57,13 @@ const Nav = () => {
             <>
               <Link
                 to="/login"
-                className="rounded-lg border border-border bg-transparent px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors"
+                className="btn-press rounded-lg border border-border bg-transparent px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors"
               >
                 {t.nav.logIn}
               </Link>
               <Link
                 to="/listings/create"
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark transition-colors"
+                className="btn-press rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark transition-[background-color] duration-150 ease-ui"
               >
                 {t.nav.postRoom}
               </Link>

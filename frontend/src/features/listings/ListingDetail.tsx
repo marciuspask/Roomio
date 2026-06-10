@@ -11,10 +11,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Calendar, DollarSign, Home, User, Flag, Lightbulb, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSavedListings, useSaveListing, useUnsaveListing } from "@/api/hooks";
+import { useLanguage } from "@/lib/i18n";
 
 const ListingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t, lang } = useLanguage();
   const { data, isLoading, isError } = useListing(id!);
   const listing = data?.data;
   const { data: posterData } = usePublicProfile(listing?.tenant_id ?? "");
@@ -35,6 +37,8 @@ const ListingDetail = () => {
   const { mutate: saveListing, isPending: saving } = useSaveListing();
   const { mutate: unsaveListing, isPending: unsaving } = useUnsaveListing();
 
+  const dateLocale = lang === "lt" ? "lt-LT" : "en-GB";
+
   const handleContact = () => {
     if (!isLoggedIn) { setShowAuthModal(true); return; }
     setMessageState("composing");
@@ -53,7 +57,7 @@ const ListingDetail = () => {
       { listingId: id, body: messageText },
       {
         onSuccess: () => navigate("/dashboard/messages"),
-        onError: () => toast({ title: "Failed to send message", variant: "destructive" }),
+        onError: () => toast({ title: t.listing.failedToSend, variant: "destructive" }),
       },
     );
   };
@@ -87,7 +91,7 @@ const ListingDetail = () => {
       <div className="min-h-screen bg-background">
         <Nav />
         <div className="flex min-h-[60vh] items-center justify-center">
-          <p className="text-sm text-muted-foreground">Could not load listing. Please try again later.</p>
+          <p className="text-sm text-muted-foreground">{t.listing.loadError}</p>
         </div>
         <Footer />
       </div>
@@ -99,14 +103,14 @@ const ListingDetail = () => {
       <div className="min-h-screen bg-background">
         <Nav />
         <div className="flex min-h-[60vh] items-center justify-center">
-          <p className="text-sm text-muted-foreground">Listing not found.</p>
+          <p className="text-sm text-muted-foreground">{t.listing.notFound}</p>
         </div>
         <Footer />
       </div>
     );
   }
 
-  const dateStr = new Date(listing.available_from).toLocaleDateString("en-GB", {
+  const dateStr = new Date(listing.available_from).toLocaleDateString(dateLocale, {
     day: "numeric", month: "long", year: "numeric",
   });
 
@@ -121,7 +125,6 @@ const ListingDetail = () => {
             <div className="mb-6">
               {listing.photos && listing.photos.length > 0 ? (
                 <div className="space-y-2">
-                  {/* Main photo */}
                   <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-surface-elevated">
                     <img
                       src={listing.photos[photoIndex]}
@@ -148,7 +151,6 @@ const ListingDetail = () => {
                       </>
                     )}
                   </div>
-                  {/* Thumbnails */}
                   {listing.photos.length > 1 && (
                     <div className="flex gap-2 overflow-x-auto">
                       {listing.photos.map((url, i) => (
@@ -188,7 +190,7 @@ const ListingDetail = () => {
                       ? `${listing.district}, ${listing.city}`
                       : listing.city}
                 </span>
-                <span className="flex items-center gap-1"><Calendar size={14} /> Available from {dateStr}</span>
+                <span className="flex items-center gap-1"><Calendar size={14} /> {t.listing.availableFrom} {dateStr}</span>
               </div>
             </div>
 
@@ -197,18 +199,18 @@ const ListingDetail = () => {
               {[
                 {
                   icon: <DollarSign size={18} />,
-                  label: `€${listing.price}/month`,
-                  sub: listing.utilities_incl ? "utilities included" : "utilities extra",
+                  label: `€${listing.price}/${lang === "lt" ? "mėn." : "month"}`,
+                  sub: listing.utilities_incl ? t.listing.utilitiesIncluded : t.listing.utilitiesExtra,
                 },
                 {
                   icon: <Home size={18} />,
-                  label: listing.listing_type === "offering" ? "Room offered" : "Looking for room",
+                  label: listing.listing_type === "offering" ? t.browse.roomOffered : t.browse.lookingForRoom,
                   sub: "",
                 },
                 { icon: <Calendar size={18} />, label: dateStr, sub: "" },
                 {
                   icon: <User size={18} />,
-                  label: listing.gender_pref === "any" ? "Any gender welcome" : `${listing.gender_pref} only`,
+                  label: t.listing.genderLabel(listing.gender_pref),
                   sub: "",
                 },
               ].map((item, i) => (
@@ -222,7 +224,7 @@ const ListingDetail = () => {
 
             {/* Description */}
             <div className="mb-6">
-              <h2 className="mb-2 font-heading text-lg font-bold text-foreground">Description</h2>
+              <h2 className="mb-2 font-heading text-lg font-bold text-foreground">{t.listing.description}</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {showFullDesc || listing.description.length <= 300
                   ? listing.description
@@ -233,23 +235,23 @@ const ListingDetail = () => {
                   onClick={() => setShowFullDesc(!showFullDesc)}
                   className="mt-1 text-sm font-medium text-primary"
                 >
-                  {showFullDesc ? "Show less" : "Read more"}
+                  {showFullDesc ? t.listing.showLess : t.listing.readMore}
                 </button>
               )}
             </div>
 
             {/* House rules */}
             <div className="mb-6">
-              <h2 className="mb-2 font-heading text-lg font-bold text-foreground">House rules</h2>
+              <h2 className="mb-2 font-heading text-lg font-bold text-foreground">{t.listing.houseRules}</h2>
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground">
-                  {listing.allows_smoking ? "✓ Smoking ok" : "❌ No smoking"}
+                  {listing.allows_smoking ? t.listing.smokingOk : t.listing.noSmoking}
                 </span>
                 <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground">
-                  {listing.allows_pets ? "✓ Pets welcome" : "❌ No pets"}
+                  {listing.allows_pets ? t.listing.petsWelcome : t.listing.noPets}
                 </span>
                 <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground">
-                  {listing.gender_pref === "any" ? "Any gender" : `${listing.gender_pref} preferred`}
+                  {t.listing.genderRule(listing.gender_pref)}
                 </span>
               </div>
             </div>
@@ -259,12 +261,12 @@ const ListingDetail = () => {
               to={`/users/${listing.tenant_id}`}
               className="block rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:border-primary/60"
             >
-              <h2 className="mb-3 font-heading text-lg font-bold text-foreground">About the poster</h2>
+              <h2 className="mb-3 font-heading text-lg font-bold text-foreground">{t.listing.aboutPoster}</h2>
               <div className="flex items-center gap-3">
                 {poster?.image_url ? (
                   <img
                     src={poster.image_url}
-                    alt={poster.display_name || "Anonymous"}
+                    alt={poster.display_name || t.listing.anonymous}
                     className="h-12 w-12 shrink-0 rounded-full object-cover"
                   />
                 ) : (
@@ -276,14 +278,14 @@ const ListingDetail = () => {
                 )}
                 <div>
                   <div className="text-sm font-semibold text-foreground">
-                    {poster?.display_name || "Anonymous"}
+                    {poster?.display_name || t.listing.anonymous}
                     {poster?.age != null ? `, ${poster.age}` : ""}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {poster?.is_phone_verified ? "✓ Phone verified · " : ""}{listing.city}
+                    {poster?.is_phone_verified ? t.listing.phoneVerifiedDot : ""}{listing.city}
                   </div>
                 </div>
-                <span className="ml-auto text-xs text-primary">View profile →</span>
+                <span className="ml-auto text-xs text-primary">{t.listing.viewProfile}</span>
               </div>
             </Link>
           </div>
@@ -293,7 +295,7 @@ const ListingDetail = () => {
             <div className="sticky top-20 rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="mb-4">
                 <span className="font-heading text-2xl font-bold text-foreground">€{listing.price}</span>
-                <span className="text-sm text-muted-foreground"> / month</span>
+                <span className="text-sm text-muted-foreground"> {t.listing.perMonth}</span>
               </div>
 
               {!isOwnListing && (
@@ -303,7 +305,7 @@ const ListingDetail = () => {
                       onClick={handleContact}
                       className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors"
                     >
-                      Send message
+                      {t.listing.sendMessage}
                     </button>
                   )}
                   {messageState === "composing" && (
@@ -317,7 +319,7 @@ const ListingDetail = () => {
                             handleSend();
                           }
                         }}
-                        placeholder="Write your message… (Enter to send, Shift+Enter for new line)"
+                        placeholder={t.listing.messagePlaceholder}
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
                         rows={3}
                       />
@@ -326,13 +328,13 @@ const ListingDetail = () => {
                         disabled={startingConversation}
                         className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-50"
                       >
-                        {startingConversation ? "Sending…" : "Send"}
+                        {startingConversation ? t.listing.sending : t.listing.send}
                       </button>
                     </div>
                   )}
                   {messageState === "sent" && (
                     <div className="rounded-lg bg-success-bg p-3 text-center text-sm font-medium text-success">
-                      Message sent! ✓
+                      {t.listing.messageSent}
                     </div>
                   )}
                   <div className="my-4 border-t border-border" />
@@ -345,20 +347,20 @@ const ListingDetail = () => {
                 className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground hover:bg-surface-elevated transition-colors disabled:opacity-50"
               >
                 <Heart size={16} className={isSaved ? "fill-primary text-primary" : ""} />
-                {isSaved ? "Saved" : "Save listing"}
+                {isSaved ? t.listing.savedListing : t.listing.saveListing}
               </button>
 
               <button
                 onClick={() => setReportOpen(true)}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Flag size={12} /> Report listing
+                <Flag size={12} /> {t.listing.reportListing}
               </button>
 
               <div className="mt-4 rounded-lg border border-warning/30 bg-warning-bg p-3">
                 <div className="flex items-start gap-2">
                   <Lightbulb size={14} className="mt-0.5 text-warning" />
-                  <p className="text-xs text-warning">Never pay a deposit before viewing the room in person.</p>
+                  <p className="text-xs text-warning">{t.listing.depositWarning}</p>
                 </div>
               </div>
             </div>
@@ -373,11 +375,11 @@ const ListingDetail = () => {
           onClick={() => setShowAuthModal(false)}
         >
           <div className="mx-4 w-full max-w-sm rounded-xl bg-card p-6 shadow-lg" onClick={e => e.stopPropagation()}>
-            <h3 className="mb-2 font-heading text-lg font-bold">Sign in to message</h3>
-            <p className="mb-4 text-sm text-muted-foreground">You need an account to contact people.</p>
+            <h3 className="mb-2 font-heading text-lg font-bold">{t.listing.signInToMessage}</h3>
+            <p className="mb-4 text-sm text-muted-foreground">{t.listing.needAccount}</p>
             <div className="flex gap-3">
-              <a href="/login" className="flex-1 rounded-lg bg-primary py-2 text-center text-sm font-medium text-primary-foreground">Log in</a>
-              <a href="/register" className="flex-1 rounded-lg border border-border py-2 text-center text-sm font-medium text-foreground">Register</a>
+              <a href="/login" className="flex-1 rounded-lg bg-primary py-2 text-center text-sm font-medium text-primary-foreground">{t.listing.logIn}</a>
+              <a href="/register" className="flex-1 rounded-lg border border-border py-2 text-center text-sm font-medium text-foreground">{t.listing.register}</a>
             </div>
           </div>
         </div>

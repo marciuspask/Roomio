@@ -1,6 +1,8 @@
 {
-  "message": "Roomio just launched in Lithuania — find your flatmate today!",
-  "link_text": "Browse rooms",
+  "message_en": "Roomio just launched in Lithuania — find your flatmate today!",
+  "message_lt": "Roomio ką tik pradėjo veikti Lietuvoje — rask kambariokus šiandien!",
+  "link_text_en": "Browse rooms",
+  "link_text_lt": "Naršyti kambarius",
   "link_url": "/listings",
   "active": true
 }

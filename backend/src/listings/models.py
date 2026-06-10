@@ -48,6 +48,8 @@ class Listing(BaseModel):
     poster_display_name: str | None = Field(default=None, description="Poster's display name")
     poster_image_url: str | None = Field(default=None, description="Poster's profile photo URL")
     poster_age: int | None = Field(default=None, description="Poster's age")
+    poster_phone_verified: bool = Field(default=False, description="Whether the poster has a verified phone number")
+    poster_email_verified: bool = Field(default=False, description="Whether the poster has a verified email address")
     created_at: datetime = Field(description="When the listing was created")
     updated_at: datetime = Field(description="When the listing was last updated")
 

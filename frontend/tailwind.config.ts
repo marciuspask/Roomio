@@ -97,11 +97,35 @@ export default {
           from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-14px)" },
+        },
+        "ambient-drift": {
+          "0%":   { transform: "scale(1)    translate(0%,  0%)" },
+          "33%":  { transform: "scale(1.1)  translate(5%, -4%)" },
+          "66%":  { transform: "scale(0.94) translate(-3%, 5%)" },
+          "100%": { transform: "scale(1)    translate(0%,  0%)" },
+        },
+        "ambient-drift-slow": {
+          "0%":   { transform: "scale(1)    translate(0%,   0%)" },
+          "40%":  { transform: "scale(1.08) translate(-6%,  3%)" },
+          "80%":  { transform: "scale(0.95) translate( 4%, -5%)" },
+          "100%": { transform: "scale(1)    translate(0%,   0%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in-up": "fade-in-up 350ms cubic-bezier(0.23, 1, 0.32, 1) both",
+        "float": "float 5s ease-in-out infinite",
+        "float-slow": "float-slow 7s ease-in-out infinite",
+        "ambient-drift": "ambient-drift 14s ease-in-out infinite",
+        "ambient-drift-slow": "ambient-drift-slow 18s ease-in-out infinite",
       },
       transitionTimingFunction: {
         "ui": "cubic-bezier(0.23, 1, 0.32, 1)",
