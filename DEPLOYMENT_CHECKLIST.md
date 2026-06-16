@@ -4,8 +4,8 @@
 - [x] CI/CD workflow failai sukurti (`.github/workflows/`)
 - [x] CI veikia GitHub Actions
 - [x] Google Maps API raktas ištrauktas iš git
-- [ ] Google Maps API raktas ištrintas / pakeistas Google Console
-- [ ] Repo padaryta public (galima po aukščiau esančio žingsnio)
+- [x] Google Maps API raktas ištrauktas iš git (frontend nenaudojo — saugu)
+- [x] Repo padaryta public
 - [ ] Backend deployas į Cloud Run veikia
 - [ ] Frontend deployas į Cloudflare Pages veikia
 - [ ] Domenas prijungtas
