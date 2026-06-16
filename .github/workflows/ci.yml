@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (lint + typecheck)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --group dev
+
+      - name: Lint (ruff)
+        working-directory: backend
+        run: uv run ruff check .
+
+      - name: Format check (ruff)
+        working-directory: backend
+        run: uv run ruff format --check .
+
+      - name: Type check (pyright)
+        working-directory: backend
+        run: uv run pyright src/
+
+  frontend:
+    name: Frontend (lint + typecheck + tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install
+
+      - name: Lint (eslint)
+        working-directory: frontend
+        run: bun run lint
+
+      - name: Type check (tsc)
+        working-directory: frontend
+        run: bunx tsc --noEmit
+
+      - name: Tests (vitest)
+        working-directory: frontend
+        run: bun run test

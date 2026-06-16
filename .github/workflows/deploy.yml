@@ -1,0 +1,139 @@
+name: Deploy
+
+# Paleidžiama TIK tada, kai pushini git tag, pvz: git tag v1.0.0 && git push origin v1.0.0
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  GCP_REGION: europe-north1          # Google Cloud regionas (pakeisk jei naudoji kitą)
+  AR_REPO: roomio                    # Artifact Registry repository pavadinimas
+  CLOUDRUN_SERVICE: roomio-backend   # Cloud Run service pavadinimas
+
+jobs:
+  # ── 1. Tikrinimai (tie patys kaip CI) ────────────────────────────────────────
+  test-backend:
+    name: Backend (lint + typecheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --group dev
+      - name: Lint (ruff)
+        working-directory: backend
+        run: uv run ruff check .
+      - name: Format check (ruff)
+        working-directory: backend
+        run: uv run ruff format --check .
+      - name: Type check (pyright)
+        working-directory: backend
+        run: uv run pyright src/
+
+  test-frontend:
+    name: Frontend (lint + typecheck + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install
+      - name: Lint (eslint)
+        working-directory: frontend
+        run: bun run lint
+      - name: Type check (tsc)
+        working-directory: frontend
+        run: bunx tsc --noEmit
+      - name: Tests (vitest)
+        working-directory: frontend
+        run: bun run test
+
+  # ── 2. Backend deploy → Google Cloud Run ─────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend → Cloud Run
+    needs: [test-backend, test-frontend]  # Laukia kol abu testai praeina
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Prisijungiama prie Google Cloud naudojant Service Account raktą
+      # Reikia GitHub secret: GCP_SA_KEY (service account JSON raktas)
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Leidžia Docker'iui pushinti į Google Artifact Registry
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      # Sukuria Docker image, optimizuotą linux/amd64 (Cloud Run naudoja AMD64, ne ARM)
+      # Image'o vardas: regionas/projektas/repo/service:tag
+      - name: Build and push Docker image
+        run: |
+          IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/roomio-backend"
+          docker build \
+            --platform linux/amd64 \
+            --tag "${IMAGE}:${{ github.ref_name }}" \
+            --tag "${IMAGE}:latest" \
+            backend/
+          docker push "${IMAGE}:${{ github.ref_name }}"
+          docker push "${IMAGE}:latest"
+          echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
+
+      # Deployo naują versiją į Cloud Run
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.CLOUDRUN_SERVICE }} \
+            --image "${{ env.IMAGE }}:${{ github.ref_name }}" \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --quiet
+
+      # Patikrina ar deployment pavyko — kvičia /health endpoint'ą
+      - name: Health check
+        run: |
+          URL=$(gcloud run services describe ${{ env.CLOUDRUN_SERVICE }} \
+            --region ${{ env.GCP_REGION }} \
+            --format 'value(status.url)')
+          echo "Deployed to: ${URL}"
+          curl --fail --silent "${URL}/health"
+
+  # ── 3. Frontend deploy → Cloudflare Pages ────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend → Cloudflare Pages
+    needs: [test-backend, test-frontend]  # Laukia kol abu testai praeina
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install
+
+      # Sukompiliuoja React app'ą produkcijai
+      # .env.production failas automatiškai naudojamas vite build metu
+      - name: Build
+        working-directory: frontend
+        run: bun run build
+
+      # Deployo sukompiliuotus failus į Cloudflare Pages
+      # Reikia GitHub secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CF_PAGES_PROJECT_NAME
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ secrets.CF_PAGES_PROJECT_NAME }}
+          workingDirectory: frontend
