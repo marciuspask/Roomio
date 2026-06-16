@@ -1,0 +1,3 @@
+# Secrets
+frontend/.env.production
+backend/.env
