@@ -2,21 +2,33 @@
 
 ## Statusas
 - [x] CI/CD workflow failai sukurti (`.github/workflows/`)
-- [ ] CI veikia GitHub Actions
+- [x] CI veikia GitHub Actions
+- [x] Google Maps API raktas ištrauktas iš git
+- [ ] Google Maps API raktas ištrintas / pakeistas Google Console
+- [ ] Repo padaryta public (galima po aukščiau esančio žingsnio)
 - [ ] Backend deployas į Cloud Run veikia
 - [ ] Frontend deployas į Cloudflare Pages veikia
 - [ ] Domenas prijungtas
 
 ---
 
-## 1. CI (dabar pat)
+## 1. CI ✅ Padaryta
 
-- [ ] `git add .github/ && git commit -m "ci: add GitHub Actions workflows" && git push`
-- [ ] Eik į **GitHub → Actions** ir patikrink ar CI praeina (žalia varnelė)
+- [x] Workflow failai sukurti ir pushinti
+- [x] CI praeina GitHub Actions (backend lint + typecheck, frontend lint + typecheck + testai)
 
 ---
 
-## 2. Google Cloud setup
+## 2. Repo paviešinimas (prieš tai — Google Maps raktas!)
+
+- [ ] Eik į [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
+- [ ] Rask Google Maps API raktą ir **ištrink jį** (arba sukurk naują)
+- [ ] Naują raktą išsaugok tik lokaliai į `frontend/.env.production` (jis nebėra git'e)
+- [ ] Repo → **Settings → Danger Zone → Change visibility → Public**
+
+---
+
+## 3. Google Cloud setup
 
 ### Projektas
 - [ ] Sukurk Google Cloud projektą → [console.cloud.google.com](https://console.cloud.google.com)
@@ -69,7 +81,7 @@
 
 ---
 
-## 3. Cloudflare setup
+## 4. Cloudflare setup
 
 ### Domenas
 - [ ] Nusipirk domeną (pvz. Namecheap, Porkbun)
@@ -97,7 +109,7 @@
 
 ---
 
-## 4. GitHub Secrets
+## 5. GitHub Secrets
 
 Eik į: **GitHub repo → Settings → Secrets and variables → Actions**
 
@@ -109,7 +121,7 @@ Eik į: **GitHub repo → Settings → Secrets and variables → Actions**
 
 ---
 
-## 5. `deploy.yml` kintamieji
+## 6. `deploy.yml` kintamieji
 
 Atidaryti `.github/workflows/deploy.yml` ir patikrinti ar sutampa:
 
@@ -124,7 +136,7 @@ env:
 
 ---
 
-## 6. Pirmas deploy
+## 7. Pirmas deploy
 
 - [ ] `git tag v1.0.0`
 - [ ] `git push origin v1.0.0`
