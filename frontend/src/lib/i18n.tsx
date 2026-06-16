@@ -444,7 +444,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
   const setLang = (l: Lang) => {
     setLangState(l);
-    try { localStorage.setItem("roomio_lang", l); } catch {}
+    try { localStorage.setItem("roomio_lang", l); } catch { /* ignore quota/security errors */ }
   };
 
   return (

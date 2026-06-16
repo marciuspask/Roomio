@@ -47,6 +47,7 @@ class ProfileUpdate(BaseModel):
 
 class ProfileSystemUpdate(BaseModel):
     """For internal/system-driven updates — fields the user cannot set directly."""
+
     email: str | None = Field(default=None, description="User's email address synced from Clerk")
     is_email_verified: bool | None = Field(
         default=None, description="Whether the user's email has been verified (from Clerk)"

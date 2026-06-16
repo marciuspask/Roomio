@@ -43,10 +43,15 @@ class TenantAwareModel:
     """
 
     tenant_id: Mapped[str] = mapped_column(
-        String(100), nullable=False, index=True,
+        String(100),
+        nullable=False,
+        index=True,
     )
     tenant_type: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="user", server_default="user",
+        String(20),
+        nullable=False,
+        default="user",
+        server_default="user",
     )
 
 
@@ -57,10 +62,15 @@ class SoftDeleteModel:
     """
 
     is_deleted: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="false", nullable=False,
+        Boolean,
+        default=False,
+        server_default="false",
+        nullable=False,
     )
     deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, default=None,
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
     )
 
     def soft_delete(self) -> None:

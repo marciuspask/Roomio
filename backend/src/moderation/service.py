@@ -51,13 +51,16 @@ class ModerationService:
         with sentry_sdk.new_scope() as scope:
             scope.set_tag("report.type", data.target_type)
             scope.set_tag("report.reason", data.reason)
-            scope.set_context("report", {
-                "reporter_id": self._tenant_context.tenant_id,
-                "target_type": data.target_type,
-                "target_id": data.target_id,
-                "reason": data.reason,
-                "description": data.description,
-            })
+            scope.set_context(
+                "report",
+                {
+                    "reporter_id": self._tenant_context.tenant_id,
+                    "target_type": data.target_type,
+                    "target_id": data.target_id,
+                    "reason": data.reason,
+                    "description": data.description,
+                },
+            )
             sentry_sdk.capture_message(
                 f"[Report] {data.target_type} — {data.reason}: {data.target_id}",
                 level="warning",

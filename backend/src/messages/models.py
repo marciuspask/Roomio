@@ -25,22 +25,27 @@ class Conversation(BaseModel):
     id: str = Field(description="Unique conversation identifier (UUID)")
     listing_id: str = Field(description="Identifier of the listing this conversation is about")
     participant_ids: list[str] = Field(
-        default_factory=list, description="Tenant IDs of participants",
+        default_factory=list,
+        description="Tenant IDs of participants",
     )
     status: ConversationStatus = Field(description="Current status of the conversation")
     last_message: Message | None = Field(default=None, description="Most recent message")
     unread_count: int = Field(default=0, description="Unread message count for the requesting user")
     listing_title: str | None = Field(
-        default=None, description="Title of the listing this conversation is about",
+        default=None,
+        description="Title of the listing this conversation is about",
     )
     participant_display_names: dict[str, str] = Field(
-        default_factory=dict, description="Display name keyed by tenant_id",
+        default_factory=dict,
+        description="Display name keyed by tenant_id",
     )
     participant_ages: dict[str, int | None] = Field(
-        default_factory=dict, description="Age keyed by tenant_id",
+        default_factory=dict,
+        description="Age keyed by tenant_id",
     )
     participant_image_urls: dict[str, str | None] = Field(
-        default_factory=dict, description="Avatar URL keyed by tenant_id",
+        default_factory=dict,
+        description="Avatar URL keyed by tenant_id",
     )
     created_at: datetime = Field(description="Timestamp when the conversation was created")
     updated_at: datetime = Field(description="Timestamp when the conversation was last updated")

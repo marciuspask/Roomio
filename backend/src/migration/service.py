@@ -20,7 +20,8 @@ class MigrationService:
         """Migrate all data from an anonymous UID to the newly registered tenant."""
         registered_context = self._tenant_context
         async with self._uow_factory.create(
-            SavedListingsUnitOfWork, registered_context,
+            SavedListingsUnitOfWork,
+            registered_context,
         ) as uow:
             migrated = await uow.saved.migrate_tenant(
                 old_tenant_id=anonymous_id,

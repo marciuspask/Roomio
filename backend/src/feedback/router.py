@@ -19,11 +19,14 @@ async def submit_feedback(body: FeedbackCreate) -> None:
 
     with sentry_sdk.new_scope() as scope:
         scope.set_tag("feedback.type", body.type)
-        scope.set_context("feedback", {
-            "type": body.type,
-            "subject": body.subject,
-            "description": body.description,
-        })
+        scope.set_context(
+            "feedback",
+            {
+                "type": body.type,
+                "subject": body.subject,
+                "description": body.description,
+            },
+        )
         sentry_sdk.capture_message(
             f"[Feedback] {body.type}: {body.subject}",
             level="info",

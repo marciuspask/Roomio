@@ -34,6 +34,7 @@ from messages.router import router as messages_router
 from messages.websocket import ConnectionManager
 from migration.router import router as migration_router
 from moderation.router import router as moderation_router
+from payments.router import router as payments_router
 from phone_verification.router import router as phone_verification_router
 from profile.router import router as profile_router
 from profile.router import users_router
@@ -137,6 +138,7 @@ def create_app() -> FastAPI:
     app.include_router(message_listings_router)
     app.include_router(saved_router)
     app.include_router(phone_verification_router)
+    app.include_router(payments_router)
 
     return app
 

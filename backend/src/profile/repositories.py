@@ -13,11 +13,7 @@ class ProfileRepository(TenantRepository[ProfileORM, Profile]):
 
     async def get_for_tenant(self) -> Profile | None:
         """Get the profile for the current tenant. Returns None if not yet created."""
-        stmt = (
-            select(ProfileORM)
-            .where(ProfileORM.tenant_id == self._tenant_id)
-            .limit(1)
-        )
+        stmt = select(ProfileORM).where(ProfileORM.tenant_id == self._tenant_id).limit(1)
         result = await self.session.execute(stmt)
         entity = result.scalars().first()
         if entity is None:
@@ -40,11 +36,7 @@ class ProfileRepository(TenantRepository[ProfileORM, Profile]):
 
     async def get_by_tenant_id(self, tenant_id: str) -> Profile | None:
         """Get any profile by tenant_id — no ownership check, for public access."""
-        stmt = (
-            select(ProfileORM)
-            .where(ProfileORM.tenant_id == tenant_id)
-            .limit(1)
-        )
+        stmt = select(ProfileORM).where(ProfileORM.tenant_id == tenant_id).limit(1)
         result = await self.session.execute(stmt)
         entity = result.scalars().first()
         if entity is None:

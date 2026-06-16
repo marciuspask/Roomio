@@ -47,13 +47,15 @@ class ListingsService:
         profile = profiles_map.get(listing.tenant_id)
         if profile is None:
             return listing
-        return listing.model_copy(update={
-            "poster_display_name": profile.display_name,
-            "poster_image_url": profile.image_url,
-            "poster_age": profile.age,
-            "poster_phone_verified": profile.is_phone_verified,
-            "poster_email_verified": profile.is_email_verified,
-        })
+        return listing.model_copy(
+            update={
+                "poster_display_name": profile.display_name,
+                "poster_image_url": profile.image_url,
+                "poster_age": profile.age,
+                "poster_phone_verified": profile.is_phone_verified,
+                "poster_email_verified": profile.is_email_verified,
+            }
+        )
 
     # -- Public methods (no auth required) ------------------------------------
 

@@ -34,7 +34,8 @@ class SettingsUpdate(BaseModel):
     theme: Theme | None = Field(default=None, description="UI theme preference")
     language: str | None = Field(default=None, description="Preferred language code")
     notifications_enabled: bool | None = Field(
-        default=None, description="Whether push notifications are enabled",
+        default=None,
+        description="Whether push notifications are enabled",
     )
     email_digest: EmailDigest | None = Field(default=None, description="Email digest frequency")
     timezone: str | None = Field(default=None, description="User timezone")

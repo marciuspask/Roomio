@@ -17,27 +17,33 @@ ADMIN_EMAILS: set[str] = {"marcius.pask@gmail.com"}
 class AuthError(BaseAppError):
     @classmethod
     def missing_token(cls) -> "AuthError":
-        return cls(ErrorData(
-            detail="Authentication required",
-            error_code="MISSING_TOKEN",
-            status_code=401,
-        ))
+        return cls(
+            ErrorData(
+                detail="Authentication required",
+                error_code="MISSING_TOKEN",
+                status_code=401,
+            )
+        )
 
     @classmethod
     def invalid_token(cls) -> "AuthError":
-        return cls(ErrorData(
-            detail="Invalid or expired token",
-            error_code="INVALID_TOKEN",
-            status_code=401,
-        ))
+        return cls(
+            ErrorData(
+                detail="Invalid or expired token",
+                error_code="INVALID_TOKEN",
+                status_code=401,
+            )
+        )
 
     @classmethod
     def forbidden(cls) -> "AuthError":
-        return cls(ErrorData(
-            detail="Admin access required",
-            error_code="FORBIDDEN",
-            status_code=403,
-        ))
+        return cls(
+            ErrorData(
+                detail="Admin access required",
+                error_code="FORBIDDEN",
+                status_code=403,
+            )
+        )
 
 
 class _AuthHeaderRequest:
@@ -79,12 +85,7 @@ class TenantResolver:
             payload = state.payload
             user_id: str = payload["sub"]
             email: str | None = payload.get("email")
-            username: str = (
-                payload.get("name")
-                or payload.get("username")
-                or email
-                or user_id
-            )
+            username: str = payload.get("name") or payload.get("username") or email or user_id
             is_admin = email is not None and email in ADMIN_EMAILS
 
             logger.info("auth_success", user_id=user_id, is_admin=is_admin)

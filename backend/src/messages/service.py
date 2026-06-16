@@ -24,7 +24,9 @@ class MessagesService:
         return self._uow_factory.create(MessagesUnitOfWork, self._tenant_context)
 
     async def _enrich_conversations(
-        self, uow: MessagesUnitOfWork, conversations: list[Conversation],
+        self,
+        uow: MessagesUnitOfWork,
+        conversations: list[Conversation],
     ) -> list[Conversation]:
         if not conversations:
             return conversations
@@ -48,18 +50,20 @@ class MessagesService:
             image_urls: dict[str, str | None] = {}
             for pid in participant_ids:
                 p = profiles_map.get(pid)
-                display_names[pid] = (
-                    p.display_name if p and p.display_name else f"User …{pid[-6:]}"
-                )
+                display_names[pid] = p.display_name if p and p.display_name else f"User …{pid[-6:]}"
                 ages[pid] = p.age if p else None
                 image_urls[pid] = p.image_url if p else None
-            enriched.append(conv.model_copy(update={
-                "participant_ids": participant_ids,
-                "listing_title": titles_map.get(conv.listing_id),
-                "participant_display_names": display_names,
-                "participant_ages": ages,
-                "participant_image_urls": image_urls,
-            }))
+            enriched.append(
+                conv.model_copy(
+                    update={
+                        "participant_ids": participant_ids,
+                        "listing_title": titles_map.get(conv.listing_id),
+                        "participant_display_names": display_names,
+                        "participant_ages": ages,
+                        "participant_image_urls": image_urls,
+                    }
+                )
+            )
         return enriched
 
     async def _is_participant(self, uow: MessagesUnitOfWork, conversation_id: str) -> bool:
@@ -72,17 +76,17 @@ class MessagesService:
         async with self._uow() as uow:
             conv_ids = await uow.participants.get_my_conversation_ids()
             total = len(conv_ids)
-            conversations = await uow.conversations.get_by_ids(
-                conv_ids, limit=limit, offset=offset
-            )
+            conversations = await uow.conversations.get_by_ids(conv_ids, limit=limit, offset=offset)
             page_ids = [c.id for c in conversations]
             last_messages = await uow.messages.get_last_messages_bulk(page_ids)
             unread_counts = await uow.messages.get_unread_counts_bulk(page_ids, tenant_id)
             base = [
-                conv.model_copy(update={
-                    "last_message": last_messages.get(conv.id),
-                    "unread_count": unread_counts.get(conv.id, 0),
-                })
+                conv.model_copy(
+                    update={
+                        "last_message": last_messages.get(conv.id),
+                        "unread_count": unread_counts.get(conv.id, 0),
+                    }
+                )
                 for conv in conversations
             ]
             enriched = await self._enrich_conversations(uow, base)
@@ -132,7 +136,9 @@ class MessagesService:
                 raise MessageError.forbidden(listing_id)
 
             conv = await uow.conversations.get_between_participants(
-                tenant_id, owner_id, listing_id,
+                tenant_id,
+                owner_id,
+                listing_id,
             )
             if conv is None:
                 conv = await uow.conversations.create_conversation(listing_id)

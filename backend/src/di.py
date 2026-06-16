@@ -15,6 +15,7 @@ from messages.websocket import ConnectionManager
 from migration.service import MigrationService
 from models import TenantContext
 from moderation.service import ModerationService
+from payments.service import PaymentsService
 from phone_verification.service import PhoneVerificationService
 from profile.service import ProfileService
 from saved.service import SavedListingsService
@@ -25,6 +26,7 @@ AdminDep = Annotated[TenantContext, Depends(require_admin)]
 
 
 # -- Profile ------------------------------------------------------------------
+
 
 def get_profile_service(request: Request, tenant: TenantDep) -> ProfileService:
     session_maker = request.app.state.session_maker
@@ -46,6 +48,7 @@ PublicProfileServiceDep = Annotated[ProfileService, Depends(get_public_profile_s
 
 # -- Settings -----------------------------------------------------------------
 
+
 def get_settings_service(request: Request, tenant: TenantDep) -> SettingsService:
     session_maker = request.app.state.session_maker
     uow_factory = UnitOfWorkFactory(session_maker)
@@ -56,6 +59,7 @@ SettingsServiceDep = Annotated[SettingsService, Depends(get_settings_service)]
 
 
 # -- Listings -----------------------------------------------------------------
+
 
 def get_listings_service(request: Request, tenant: TenantDep) -> ListingsService:
     session_maker = request.app.state.session_maker
@@ -75,6 +79,7 @@ PublicListingsServiceDep = Annotated[ListingsService, Depends(get_public_listing
 
 # -- WebSocket helpers --------------------------------------------------------
 
+
 def get_tenant_resolver(request: Request | WebSocket) -> TenantResolver:
     return request.app.state.tenant_resolver  # type: ignore[no-any-return]
 
@@ -83,9 +88,7 @@ def get_connection_manager(request: Request | WebSocket) -> ConnectionManager:
     return request.app.state.ws_manager  # type: ignore[no-any-return]
 
 
-def get_ws_messages_service(
-    request: Request | WebSocket, tenant: TenantContext
-) -> MessagesService:
+def get_ws_messages_service(request: Request | WebSocket, tenant: TenantContext) -> MessagesService:
     """Build MessagesService for WebSocket handlers. Same wiring as HTTP."""
     session_maker = request.app.state.session_maker
     uow_factory = UnitOfWorkFactory(session_maker)
@@ -96,6 +99,7 @@ ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manag
 
 
 # -- Messages -----------------------------------------------------------------
+
 
 def get_messages_service(request: Request, tenant: TenantDep) -> MessagesService:
     session_maker = request.app.state.session_maker
@@ -108,6 +112,7 @@ MessagesServiceDep = Annotated[MessagesService, Depends(get_messages_service)]
 
 # -- Saved listings -----------------------------------------------------------
 
+
 def get_saved_listings_service(request: Request, tenant: TenantDep) -> SavedListingsService:
     session_maker = request.app.state.session_maker
     uow_factory = UnitOfWorkFactory(session_maker)
@@ -118,6 +123,7 @@ SavedListingsServiceDep = Annotated[SavedListingsService, Depends(get_saved_list
 
 
 # -- Phone verification -------------------------------------------------------
+
 
 def get_phone_verification_service(request: Request, tenant: TenantDep) -> PhoneVerificationService:
     session_maker = request.app.state.session_maker
@@ -133,6 +139,7 @@ PhoneVerificationServiceDep = Annotated[
 
 # -- Moderation ---------------------------------------------------------------
 
+
 def get_moderation_service(request: Request, tenant: TenantDep) -> ModerationService:
     session_maker = request.app.state.session_maker
     uow_factory = UnitOfWorkFactory(session_maker)
@@ -144,6 +151,7 @@ ModerationServiceDep = Annotated[ModerationService, Depends(get_moderation_servi
 
 # -- Migration ----------------------------------------------------------------
 
+
 def get_migration_service(request: Request, tenant: TenantDep) -> MigrationService:
     session_maker = request.app.state.session_maker
     uow_factory = UnitOfWorkFactory(session_maker)
@@ -152,3 +160,24 @@ def get_migration_service(request: Request, tenant: TenantDep) -> MigrationServi
 
 MigrationServiceDep = Annotated[MigrationService, Depends(get_migration_service)]
 
+
+# -- Payments -----------------------------------------------------------------
+
+
+def get_payments_service(request: Request, tenant: TenantDep) -> PaymentsService:
+    return PaymentsService(
+        settings=request.app.state.config,
+        session_maker=request.app.state.session_maker,
+        tenant_context=tenant,
+    )
+
+
+def get_webhook_payments_service(request: Request) -> PaymentsService:
+    return PaymentsService(
+        settings=request.app.state.config,
+        session_maker=request.app.state.session_maker,
+    )
+
+
+PaymentsServiceDep = Annotated[PaymentsService, Depends(get_payments_service)]
+WebhookPaymentsServiceDep = Annotated[PaymentsService, Depends(get_webhook_payments_service)]

@@ -10,6 +10,7 @@ Creates all tables and applies schema evolution:
 Run from backend/:
     uv run python migrate.py
 """
+
 import asyncio
 import sys
 from pathlib import Path
@@ -18,17 +19,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 # Import every ORM module so they register with Base.metadata before create_all
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+
 import listings.database.orm_models  # noqa: F401
-import phone_verification.database.orm_models  # noqa: F401
 import messages.database.orm_models  # noqa: F401
+import moderation.database.orm_models  # noqa: F401
+import phone_verification.database.orm_models  # noqa: F401
 import profile.database.orm_models  # noqa: F401
 import saved.database.orm_models  # noqa: F401
 import settings.database.orm_models  # noqa: F401
-import moderation.database.orm_models  # noqa: F401
-
 from common.database.base_models import Base
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
 
 DATABASE_URL = (
     "postgresql+asyncpg://neondb_owner:npg_vXGmD39VKnWc"
@@ -53,7 +54,6 @@ async def main() -> None:
     engine = create_async_engine(DATABASE_URL, echo=False)
 
     async with engine.begin() as conn:
-
         # ── 1. Create all tables that don't exist yet ─────────────────────
         print("Step 1 — creating missing tables...")
         await conn.run_sync(Base.metadata.create_all)
@@ -63,21 +63,27 @@ async def main() -> None:
         print("Step 2 — adding missing columns...")
 
         if not await column_exists(conn, "listings", "street_address"):
-            await conn.execute(text(
-                "ALTER TABLE listings ADD COLUMN street_address VARCHAR(255)"
-            ))
+            await conn.execute(text("ALTER TABLE listings ADD COLUMN street_address VARCHAR(255)"))
             print("  ✓ listings.street_address added")
         else:
             print("  · listings.street_address already present")
 
         if not await column_exists(conn, "conversations", "status"):
-            await conn.execute(text(
-                "ALTER TABLE conversations "
-                "ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active'"
-            ))
+            await conn.execute(
+                text(
+                    "ALTER TABLE conversations "
+                    "ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active'"
+                )
+            )
             print("  ✓ conversations.status added")
         else:
             print("  · conversations.status already present")
+
+        if not await column_exists(conn, "listings", "is_boosted_until"):
+            await conn.execute(text("ALTER TABLE listings ADD COLUMN is_boosted_until TIMESTAMPTZ"))
+            print("  ✓ listings.is_boosted_until added")
+        else:
+            print("  · listings.is_boosted_until already present")
 
         print()
 
@@ -87,7 +93,8 @@ async def main() -> None:
 
         if has_legacy:
             print("  Found participant_ids column — backfilling join table...")
-            result = await conn.execute(text("""
+            result = await conn.execute(
+                text("""
                 INSERT INTO conversation_participants
                     (id, conversation_id, tenant_id, tenant_type,
                      role, created_at, updated_at)
@@ -103,11 +110,10 @@ async def main() -> None:
                 CROSS JOIN LATERAL jsonb_array_elements_text(c.participant_ids) AS elem
                 LEFT JOIN listings l ON l.id = c.listing_id
                 ON CONFLICT (conversation_id, tenant_id) DO NOTHING
-            """))
+            """)
+            )
             print(f"  ✓ {result.rowcount} participant rows inserted")
-            await conn.execute(text(
-                "ALTER TABLE conversations DROP COLUMN participant_ids"
-            ))
+            await conn.execute(text("ALTER TABLE conversations DROP COLUMN participant_ids"))
             print("  ✓ participant_ids column dropped\n")
         else:
             print("  · No legacy column — backfill not needed\n")

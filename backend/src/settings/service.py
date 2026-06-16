@@ -20,7 +20,8 @@ class SettingsService:
 
     async def get_or_create_settings(self) -> Settings:
         async with self._uow_factory.create(
-            SettingsUnitOfWork, self._tenant_context,
+            SettingsUnitOfWork,
+            self._tenant_context,
         ) as uow:
             settings = await uow.settings.get_for_tenant()
             if settings is not None:
@@ -34,7 +35,8 @@ class SettingsService:
 
     async def update_settings(self, data: SettingsUpdate) -> Settings:
         async with self._uow_factory.create(
-            SettingsUnitOfWork, self._tenant_context,
+            SettingsUnitOfWork,
+            self._tenant_context,
         ) as uow:
             existing = await uow.settings.get_for_tenant()
             if existing is None:

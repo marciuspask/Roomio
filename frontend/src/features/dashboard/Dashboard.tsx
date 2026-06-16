@@ -133,7 +133,6 @@ const Dashboard = () => {
   // Boost modal
   const [boostModal, setBoostModal] = useState<string | null>(null);
   const [boostLoading, setBoostLoading] = useState(false);
-  const [boostedIds, setBoostedIds] = useState<string[]>([]);
 
   const totalUnread = conversations.reduce((s, c) => s + c.unread_count, 0);
 
@@ -169,14 +168,18 @@ const Dashboard = () => {
     }
   };
 
-  const handleBoost = (id: string) => {
+  const handleBoost = async (id: string) => {
     setBoostLoading(true);
-    setTimeout(() => {
-      setBoostedIds(p => [...p, id]);
+    try {
+      const res = await apiClient.instance.post<{ checkout_url: string }>(
+        "/api/v1/payments/checkout",
+        { listing_id: id },
+      );
+      window.location.href = res.data.checkout_url;
+    } catch {
+      toast({ title: "Failed to start boost", variant: "destructive" });
       setBoostLoading(false);
-      setBoostModal(null);
-      toast({ title: "🚀 Your listing is now featured!" });
-    }, 1500);
+    }
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -442,7 +445,7 @@ const Dashboard = () => {
                       >
                         {t.dashboard.edit}
                       </button>
-                      {boostedIds.includes(l.id) || l.is_boosted ? (
+                      {l.is_boosted ? (
                         <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary-dark">{t.dashboard.featured}</span>
                       ) : (
                         <button onClick={() => setBoostModal(l.id)}

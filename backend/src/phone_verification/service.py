@@ -27,7 +27,8 @@ class PhoneVerificationService:
 
     async def send_code(self, phone_number: str) -> None:
         async with self._uow_factory.create(
-            PhoneVerificationUnitOfWork, self._tenant_context,
+            PhoneVerificationUnitOfWork,
+            self._tenant_context,
         ) as uow:
             if await uow.verifications.has_recent_request(phone_number):
                 raise PhoneVerificationError.rate_limited()
@@ -47,11 +48,12 @@ class PhoneVerificationService:
             )
         except Exception as e:
             logger.error("sms_send_failed", error=str(e))
-            raise PhoneVerificationError.send_failed(str(e))
+            raise PhoneVerificationError.send_failed(str(e)) from e
 
     async def verify_code(self, phone_number: str, code: str) -> None:
         async with self._uow_factory.create(
-            PhoneVerificationUnitOfWork, self._tenant_context,
+            PhoneVerificationUnitOfWork,
+            self._tenant_context,
         ) as uow:
             record = await uow.verifications.find_valid(phone_number, code)
             if record is None:

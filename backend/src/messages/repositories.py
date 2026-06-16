@@ -94,15 +94,13 @@ class MessageRepository(BaseRepository[MessageORM, Message]):
         return self.to_model_list(list(result.scalars().all()))
 
     async def count_messages(self, conversation_id: str) -> int:
-        stmt = (
-            select(func.count())
-            .where(MessageORM.conversation_id == conversation_id)
-        )
+        stmt = select(func.count()).where(MessageORM.conversation_id == conversation_id)
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
     async def get_last_messages_bulk(
-        self, conversation_ids: list[str],
+        self,
+        conversation_ids: list[str],
     ) -> dict[str, Message]:
         """Return the most recent message per conversation in one query."""
         if not conversation_ids:
@@ -121,15 +119,17 @@ class MessageRepository(BaseRepository[MessageORM, Message]):
             .where(MessageORM.conversation_id.in_(conversation_ids))
             .subquery()
         )
-        stmt = select(MessageORM).join(
-            ranked, MessageORM.id == ranked.c.id,
-        ).where(ranked.c.rn == 1)
+        stmt = (
+            select(MessageORM)
+            .join(
+                ranked,
+                MessageORM.id == ranked.c.id,
+            )
+            .where(ranked.c.rn == 1)
+        )
 
         result = await self.session.execute(stmt)
-        return {
-            entity.conversation_id: self.to_model(entity)
-            for entity in result.scalars().all()
-        }
+        return {entity.conversation_id: self.to_model(entity) for entity in result.scalars().all()}
 
     async def get_last_message(self, conversation_id: str) -> Message | None:
         stmt = (
@@ -145,7 +145,9 @@ class MessageRepository(BaseRepository[MessageORM, Message]):
         return self.to_model(entity)
 
     async def get_unread_counts_bulk(
-        self, conversation_ids: list[str], reader_id: str,
+        self,
+        conversation_ids: list[str],
+        reader_id: str,
     ) -> dict[str, int]:
         """Return unread count per conversation using last_read_at from participants."""
         if not conversation_ids:

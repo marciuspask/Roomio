@@ -18,11 +18,7 @@ class SettingsRepository(TenantRepository[SettingsORM, Settings]):
         return await self._update(settings_id, data)
 
     async def get_for_tenant(self) -> Settings | None:
-        stmt = (
-            select(SettingsORM)
-            .where(SettingsORM.tenant_id == self._tenant_id)
-            .limit(1)
-        )
+        stmt = select(SettingsORM).where(SettingsORM.tenant_id == self._tenant_id).limit(1)
         result = await self.session.execute(stmt)
         entity = result.scalars().first()
         if entity is None:

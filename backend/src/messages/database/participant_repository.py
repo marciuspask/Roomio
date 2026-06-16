@@ -11,7 +11,6 @@ from models import TenantContext
 
 
 class ParticipantRepository(TenantRepository[ConversationParticipantORM, Participant]):
-
     def __init__(self, session: AsyncSession, tenant_context: TenantContext) -> None:
         super().__init__(session, ConversationParticipantORM, Participant, tenant_context)
 

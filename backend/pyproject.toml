@@ -16,6 +16,7 @@ dependencies = [
     "twilio>=9.0.0",
     "websockets>=16.0",
     "sentry-sdk[fastapi]>=2.62.0",
+    "stripe>=15.2.0",
 ]
 
 [dependency-groups]

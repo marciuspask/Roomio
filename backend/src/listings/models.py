@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ListingType(StrEnum):
     OFFERING = "offering"  # Landlord offering a room
-    SEEKING = "seeking"    # Tenant looking for a room
+    SEEKING = "seeking"  # Tenant looking for a room
 
 
 class GenderPref(StrEnum):
@@ -40,6 +40,7 @@ class Listing(BaseModel):
     gender_pref: GenderPref = Field(description="Preferred gender of the tenant")
     status: ListingStatus = Field(description="Current listing status")
     is_boosted: bool = Field(description="Whether the listing is boosted for higher visibility")
+    is_boosted_until: datetime | None = Field(default=None, description="When the boost expires")
     photos: list[str] = Field(default=[], description="List of photo URLs for the listing")
     street_address: str | None = Field(
         default=None,
@@ -48,8 +49,8 @@ class Listing(BaseModel):
     poster_display_name: str | None = Field(default=None, description="Poster's display name")
     poster_image_url: str | None = Field(default=None, description="Poster's profile photo URL")
     poster_age: int | None = Field(default=None, description="Poster's age")
-    poster_phone_verified: bool = Field(default=False, description="Whether the poster has a verified phone number")
-    poster_email_verified: bool = Field(default=False, description="Whether the poster has a verified email address")
+    poster_phone_verified: bool = Field(default=False, description="Poster phone verified")
+    poster_email_verified: bool = Field(default=False, description="Poster email verified")
     created_at: datetime = Field(description="When the listing was created")
     updated_at: datetime = Field(description="When the listing was last updated")
 
@@ -66,20 +67,24 @@ class ListingCreate(BaseModel):
     allows_smoking: bool = Field(default=False, description="Whether smoking is permitted")
     allows_pets: bool = Field(default=False, description="Whether pets are permitted")
     gender_pref: GenderPref = Field(
-        default=GenderPref.ANY, description="Preferred gender of the tenant",
+        default=GenderPref.ANY,
+        description="Preferred gender of the tenant",
     )
     status: ListingStatus = Field(
-        default=ListingStatus.DRAFT, description="Initial listing status",
+        default=ListingStatus.DRAFT,
+        description="Initial listing status",
     )
     street_address: str | None = Field(
-        default=None, description="Street address of the room (optional, kept private)",
+        default=None,
+        description="Street address of the room (optional, kept private)",
     )
     photos: list[str] = Field(default=[], description="List of photo URLs for the listing")
 
 
 class ListingUpdate(BaseModel):
     listing_type: ListingType | None = Field(
-        default=None, description="Whether offering or seeking a room",
+        default=None,
+        description="Whether offering or seeking a room",
     )
     title: str | None = Field(default=None, description="Short headline for the listing")
     description: str | None = Field(default=None, description="Full description of the listing")
@@ -88,16 +93,19 @@ class ListingUpdate(BaseModel):
     price: float | None = Field(default=None, description="Monthly rent price in local currency")
     utilities_incl: bool | None = Field(default=None, description="Whether utilities are included")
     available_from: date | None = Field(
-        default=None, description="Date from which the room is available",
+        default=None,
+        description="Date from which the room is available",
     )
     allows_smoking: bool | None = Field(default=None, description="Whether smoking is permitted")
     allows_pets: bool | None = Field(default=None, description="Whether pets are permitted")
     gender_pref: GenderPref | None = Field(
-        default=None, description="Preferred gender of the tenant",
+        default=None,
+        description="Preferred gender of the tenant",
     )
     status: ListingStatus | None = Field(default=None, description="Current listing status")
     street_address: str | None = Field(
-        default=None, description="Street address of the room (optional, kept private)",
+        default=None,
+        description="Street address of the room (optional, kept private)",
     )
     photos: list[str] | None = Field(default=None, description="List of photo URLs for the listing")
 

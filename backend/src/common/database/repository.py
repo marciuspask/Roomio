@@ -23,7 +23,10 @@ class OrmConverter(Generic[TOrm, TModel]):
         self._model_class = model_class
 
     def to_orm(
-        self, data: BaseModel, *, extra_fields: dict[str, object] | None = None,
+        self,
+        data: BaseModel,
+        *,
+        extra_fields: dict[str, object] | None = None,
     ) -> TOrm:
         """Pydantic model → new ORM entity."""
         fields = data.model_dump()
@@ -135,7 +138,10 @@ class BaseRepository(Generic[TOrm, TModel]):
         return self.to_model(entity)
 
     async def get_all(
-        self, *, limit: int = 100, offset: int = 0,
+        self,
+        *,
+        limit: int = 100,
+        offset: int = 0,
     ) -> list[TModel]:
         stmt = select(self.orm_class).offset(offset).limit(limit)
         result = await self.session.execute(stmt)
@@ -227,7 +233,10 @@ class TenantRepository(BaseRepository[TOrm, TModel]):
         return self.to_model(entity)
 
     async def get_all(
-        self, *, limit: int = 100, offset: int = 0,
+        self,
+        *,
+        limit: int = 100,
+        offset: int = 0,
     ) -> list[TModel]:
         stmt = (
             select(self.orm_class)

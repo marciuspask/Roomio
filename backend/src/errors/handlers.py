@@ -30,7 +30,8 @@ async def base_app_error_handler(request: Request, exc: BaseAppError) -> JSONRes
 
 
 async def pydantic_validation_error_handler(
-    request: Request, exc: ValidationError,
+    request: Request,
+    exc: ValidationError,
 ) -> JSONResponse:
     """Catches Pydantic ValidationError → 422 JSON."""
     return JSONResponse(
@@ -44,7 +45,8 @@ async def pydantic_validation_error_handler(
 
 
 async def request_validation_error_handler(
-    request: Request, exc: RequestValidationError,
+    request: Request,
+    exc: RequestValidationError,
 ) -> JSONResponse:
     """Catches FastAPI RequestValidationError → 422 JSON."""
     return JSONResponse(
