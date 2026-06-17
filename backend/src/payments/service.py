@@ -23,6 +23,7 @@ class PaymentsService:
         self._webhook_secret = settings.stripe_webhook_secret
         self._session_maker = session_maker
         self._tenant_context = tenant_context
+        self._frontend_url = settings.frontend_url
 
     async def create_checkout_session(self, listing_id: str) -> str:
         if self._tenant_context is None:
@@ -43,8 +44,8 @@ class PaymentsService:
                     }
                 ],
                 mode="payment",
-                success_url="https://roomio-b0e.pages.dev/dashboard/listings?boosted=1",
-                cancel_url="https://roomio-b0e.pages.dev/dashboard/listings",
+                success_url=f"{self._frontend_url}/dashboard/listings?boosted=1",
+                cancel_url=f"{self._frontend_url}/dashboard/listings",
                 metadata={"listing_id": listing_id, "tenant_id": tenant_id},
             )
 
@@ -62,7 +63,7 @@ class PaymentsService:
         listing_id: str | None = metadata.get("listing_id")
 
         if not listing_id:
-            logger.warning("webhook_missing_listing_id", event_id=event.id)
+            logger.warning("webhook_missing_listing_id", event_id=event["id"])
             return
 
         async with self._session_maker() as db:

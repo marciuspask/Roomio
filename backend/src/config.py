@@ -29,3 +29,6 @@ class Settings(BaseSettings):
     sentry_dsn: str = Field(default="", description="Sentry DSN for error tracking")
     stripe_secret_key: str = Field(default="", description="Stripe secret key")
     stripe_webhook_secret: str = Field(default="", description="Stripe webhook signing secret")
+    frontend_url: str = Field(
+        default="http://localhost:5173", description="Frontend base URL for Stripe redirects"
+    )
